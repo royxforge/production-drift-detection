@@ -229,7 +229,7 @@ production-drift-detection/
 
 ```bash
 # From source
-git clone https://github.com/royxlead/production-drift-detection.git
+git clone https://github.com/royxforge/production-drift-detection.git
 cd production-drift-detection
 pip install -e .
 
@@ -450,9 +450,8 @@ Confidence is continuous - it responds to small perturbations. Accuracy is disco
 
 ## Related Work
 
-- [Unsupervised Confidence Estimation](https://github.com/royxlead/unsupervised-confidence-estimation) - Unsupervised Confidence Estimation
-- [CURA](https://github.com/royxlead/cura-python) - RAG reliability and hallucination mitigation
-- [AutoLLM Forge](https://github.com/royxlead/autollmforge-python) - Efficient LLM fine-tuning
+- [Unsupervised Confidence Estimation](https://github.com/royxforge/unsupervised-confidence-estimation) - Unsupervised Confidence Estimation
+- [Parameter Efficient Fine Tuning](https://github.com/royxforge/parameter-efficient-fine-tuning) - Efficient LLM fine-tuning
 
 ---
 
@@ -463,12 +462,12 @@ Confidence is continuous - it responds to small perturbations. Accuracy is disco
   author = {Roy, Sourav},
   title  = {Production Drift Detection: Real-Time Data Drift Detection for Production ML Systems},
   year   = {2026},
-  url    = {https://github.com/royxlead/production-drift-detection}
+  url    = {https://github.com/royxforge/production-drift-detection}
 }
 ```
 
 ---
 
 <p align="center">
-  <sub>Built by <a href="https://github.com/royxlead">Sourav Roy</a> · Founding AI/ML Engineer · Yuga AI</sub>
+  <sub>Built by <a href="https://github.com/royxforge">Sourav Roy</a> · Artificial Intelligence Engineer · Accure Inc.</sub>
 </p>
