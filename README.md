@@ -30,7 +30,6 @@
 - [Synthetic Drift Generation](#synthetic-drift-generation)
 - [Dashboard](#dashboard)
 - [Evaluation](#evaluation)
-- [Roadmap](#roadmap)
 - [Related Work](#related-work)
 - [Citation](#citation)
 
@@ -430,21 +429,6 @@ Production Drift Detection connects to established literature on distribution sh
 
 **Why confidence tracks drift even without leading it:**
 Confidence is continuous - it responds to small perturbations. Accuracy is discontinuous - a prediction is right or wrong. Both signals are informative; their relationship is model-dependent and drift-type-dependent rather than universally ordered.
-
----
-
-## Roadmap
-
-- [ ] MC Dropout integration for improved epistemic uncertainty estimates
-- [ ] Deep kernel learning for MMD-based drift detection
-- [ ] Conformal prediction interval monitoring
-- [ ] Adaptive threshold calibration (auto-recalibration from validation data)
-- [ ] REST API for production deployment
-- [ ] Kubernetes-native deployment support
-- [ ] Real-time alerting (Slack, PagerDuty, email)
-- [ ] SQL/NoSQL storage for drift history
-- [ ] Multi-model orchestration
-- [ ] A/B test monitoring support
 
 ---
 
