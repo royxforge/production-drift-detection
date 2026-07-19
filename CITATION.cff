@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use this software in your research, please cite it as below."
+authors:
+  - family-names: Roy
+    given-names: Sourav
+    email: royxforge@proton.me
+    orcid: ""
+title: "Production Drift Detection: Real-Time Data Drift Detection for Production ML Systems"
+version: 0.2.0
+date-released: 2026-07-20
+url: "https://github.com/royxforge/production-drift-detection"
+repository-code: "https://github.com/royxforge/production-drift-detection"
+license: MIT
+keywords:
+  - drift detection
+  - model monitoring
+  - MMD
+  - KL divergence
+  - confidence estimation
+  - production ML
