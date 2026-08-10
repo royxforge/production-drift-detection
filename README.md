@@ -436,6 +436,7 @@ Confidence is continuous - it responds to small perturbations. Accuracy is disco
 
 - [Unsupervised Confidence Estimation](https://github.com/royxforge/unsupervised-confidence-estimation) - Unsupervised Confidence Estimation
 - [Parameter Efficient Fine Tuning](https://github.com/royxforge/parameter-efficient-fine-tuning) - Efficient LLM fine-tuning
+- [UniTSFM](https://github.com/royxforge/uniftsm) - Per-horizon uncertainty signals (CRPS, quantile spread) exposed by a unified forecasting API for population-level drift monitoring
 
 ---
 
