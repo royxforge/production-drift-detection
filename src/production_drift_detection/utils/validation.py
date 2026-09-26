@@ -7,7 +7,7 @@ import pandas as pd
 
 
 def validate_array(
-    data: Union[np.ndarray, list, pd.Series],
+    data: Union[np.ndarray, list, pd.Series, pd.DataFrame],
     name: str = "data",
     ndim: Optional[int] = None,
     min_length: int = 1,
@@ -40,6 +40,8 @@ def validate_array(
     TypeError
         If type is not array-like.
     """
+    if isinstance(data, pd.DataFrame):
+        data = data.to_numpy()
     if isinstance(data, pd.Series):
         data = data.values
     if isinstance(data, list):

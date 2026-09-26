@@ -33,10 +33,13 @@ class MMDDetector(BaseDetector):
         name: Optional[str] = None,
         bandwidth: Optional[float] = None,
         subsample: Optional[int] = None,
+        seed: int = 42,
     ):
         super().__init__(threshold=threshold, name=name or "MMD")
         self.bandwidth = bandwidth
         self.subsample = subsample
+        self.seed = seed
+        self._bandwidth_: Optional[float] = None
         self._reference_kernel_xx: Optional[float] = None
         self._reference_gram: Optional[np.ndarray] = None
 
@@ -54,8 +57,20 @@ class MMDDetector(BaseDetector):
 
         self._reference_data = data
 
+        # Resolve the bandwidth ONCE at fit time on the reference sample so
+        # that fit/score (and repeated score calls) all use the same kernel.
+        ref_sample = data[: min(500, len(data))]
+        if self.bandwidth is not None:
+            self._bandwidth_ = float(self.bandwidth)
+        else:
+            from scipy.spatial.distance import cdist as _cdist
+
+            dists = _cdist(ref_sample, ref_sample, metric="euclidean")
+            med = float(np.median(dists[dists > 0])) if (dists > 0).any() else float("nan")
+            self._bandwidth_ = med if med and med > 0 and med == med else 1.0
+
         # Precompute reference kernel terms for efficiency
-        K_xx = compute_rbf_kernel(data, data, bandwidth=self.bandwidth)
+        K_xx = compute_rbf_kernel(data, data, bandwidth=self._bandwidth_)
         n = len(data)
         # Sum of K_xx excluding diagonal
         self._reference_kernel_xx = (np.sum(K_xx) - n) / (n * (n - 1))
@@ -75,19 +90,20 @@ class MMDDetector(BaseDetector):
         if reference.ndim == 1:
             reference = reference.reshape(-1, 1)
 
-        # Subsample batch if needed
+        # Subsample batch if needed (seeded for reproducibility)
         if self.subsample is not None and len(batch) > self.subsample:
-            rng = np.random.default_rng()
+            rng = np.random.default_rng(self.seed)
             idx = rng.choice(len(batch), self.subsample, replace=False)
             batch = batch[idx]
 
         n = len(reference)
         m = len(batch)
 
-        # Compute kernels
+        # Compute kernels with the fit-time bandwidth (never re-estimate
+        # per-score: the reference gram was built with self._bandwidth_).
         K_xx = self._reference_gram
-        K_yy = compute_rbf_kernel(batch, batch, bandwidth=self.bandwidth)
-        K_xy = compute_rbf_kernel(reference, batch, bandwidth=self.bandwidth)
+        K_yy = compute_rbf_kernel(batch, batch, bandwidth=self._bandwidth_)
+        K_xy = compute_rbf_kernel(reference, batch, bandwidth=self._bandwidth_)
 
         # MMD^2 = 1/(n^2) * sum(K_xx) - 2/(nm) * sum(K_xy) + 1/(m^2) * sum(K_yy)
         mmd2 = (
@@ -101,7 +117,8 @@ class MMDDetector(BaseDetector):
     def summary(self):
         base = super().summary()
         base.update({
-            "bandwidth": self.bandwidth,
+            "bandwidth": self._bandwidth_,
+            "bandwidth_explicit": self.bandwidth,
             "subsample": self.subsample,
             "reference_size": len(self._reference_data) if self._reference_data is not None else 0,
         })

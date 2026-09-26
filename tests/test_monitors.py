@@ -1,6 +1,7 @@
 """Tests for stream and confidence monitors."""
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from production_drift_detection.detectors.kl import KLDivergenceDetector
@@ -17,6 +18,21 @@ class TestStreamMonitor:
         reference = np.random.normal(0, 1, (500, 3))
         monitor.fit(reference)
         assert monitor._fitted is True
+
+    def test_process_batch_requires_fit(self):
+        """process_batch must fail loudly when the monitor was never fitted."""
+        monitor = StreamMonitor()
+        with pytest.raises(RuntimeError, match="must be fitted"):
+            monitor.process_batch(np.random.normal(0, 1, (100, 3)))
+
+    def test_process_batch_accepts_dataframe(self):
+        monitor = StreamMonitor()
+        reference = pd.DataFrame(np.random.normal(0, 1, (500, 3)), columns=["a", "b", "c"])
+        monitor.fit(reference)
+        batch = pd.DataFrame(np.random.normal(0, 1, (100, 3)), columns=["a", "b", "c"])
+        result = monitor.process_batch(batch)
+        assert "scores" in result
+        assert result["batch"] == 1
 
     def test_process_batch(self):
         monitor = StreamMonitor()

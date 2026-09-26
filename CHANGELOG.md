@@ -5,6 +5,23 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **Packaging (critical)**: `packages.find include` corrected to `production_drift_detection*` (was `production-drift-detection*`); the wheel previously contained no package and `import production_drift_detection` failed after `pip install`.
+- **MMD detector**: kernel bandwidth is resolved once at `fit` time from the reference sample and reused by every `score` call (previously re-estimated from each batch, mixing incompatible kernels); batch subsampling is seeded via the new `seed` parameter.
+- **PSI detector**: `bin_strategy` is honored — `"uniform"` now produces `linspace` edges instead of silently using quantiles for both strategies.
+- **ADWIN detector**: change-detection threshold corrected to the paper's Hoeffding bound `sqrt((1/(2m))·ln(4n/δ))` (the old formula shrank with window size and missed detections); split search uses prefix sums over dyadic candidates (O(W)/update instead of O(W²) mean recomputation).
+- **DataFrame inputs**: `validate_array` accepts `pd.DataFrame` (previously `StreamMonitor.process_batch` typed `ndarray | DataFrame` but rejected DataFrames).
+
+### Changed (breaking)
+
+- **`StreamMonitor.process_batch` no longer auto-fits on the first batch**: callers must call `fit()` explicitly; silently fitting on the first batch scored the reference against itself.
+- **Dashboard CORS**: default origin list is now `http://localhost:8501` (override with `DRIFT_DASHBOARD_CORS_ORIGINS`), restricted to `GET`; `/api/confidence` histories are capped at 500 points via new bounded getters.
+
+---
+
 ## [0.3.0] - 2026-07-20
 
 ### Changed

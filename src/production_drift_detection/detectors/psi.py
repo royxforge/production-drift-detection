@@ -66,10 +66,16 @@ class PSIDetector(BaseDetector):
         self._reference_props = {}
         for col in range(self._n_features):
             feature_data = data[:, col]
-            # Use quantiles of this feature for bin edges
-            bin_edges = np.percentile(
-                feature_data, np.linspace(0, 100, self.n_bins + 1)
-            )
+            # Bin edges from the REFERENCE distribution only, honouring the
+            # configured strategy (previous code always used percentiles).
+            if self.bin_strategy == "uniform":
+                bin_edges = np.linspace(
+                    np.min(feature_data), np.max(feature_data), self.n_bins + 1
+                )
+            else:  # "quantile"
+                bin_edges = np.percentile(
+                    feature_data, np.linspace(0, 100, self.n_bins + 1)
+                )
             bin_edges = np.unique(bin_edges)
             if len(bin_edges) < 2:
                 bin_edges = np.array([np.min(feature_data), np.max(feature_data) + 1e-6])

@@ -93,6 +93,10 @@ class StreamMonitor:
     def process_batch(self, batch: Union[np.ndarray, pd.DataFrame]) -> Dict[str, Any]:
         """Process a single data batch through all detectors.
 
+        The monitor must be fitted explicitly via :meth:`fit` first —
+        silently fitting on the first batch would hide a caller error and
+        score the reference batch against itself (score ≈ 0).
+
         Parameters
         ----------
         batch : array-like
@@ -105,11 +109,9 @@ class StreamMonitor:
         """
         batch = validate_array(batch, name="batch")
         if not self._fitted:
-            if self._batch_count == 0:
-                self.fit(batch)
-                return {"status": "initialized", "scores": {}, "alerts": [], "batch": self._batch_count}
-            else:
-                raise RuntimeError("Monitor must be fitted before processing batches.")
+            raise RuntimeError(
+                "Monitor must be fitted before processing batches. Call fit() first."
+            )
 
         self._batch_count += 1
         self._batch_timestamps.append(pd.Timestamp.now())

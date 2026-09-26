@@ -122,6 +122,20 @@ class TestPSIDetector:
         score = detector.score(batch)
         assert score > 0.05
 
+    def test_bin_strategy_uniform_vs_quantile(self):
+        """bin_strategy must actually change the fit-time bin edges."""
+        rng = np.random.default_rng(11)
+        reference = rng.normal(0, 1, 500)
+        q = PSIDetector(threshold=0.1, n_bins=5, bin_strategy="quantile")
+        u = PSIDetector(threshold=0.1, n_bins=5, bin_strategy="uniform")
+        q.fit(reference)
+        u.fit(reference)
+        q_edges, _ = q._reference_props[0]
+        u_edges, _ = u._reference_props[0]
+        assert not np.allclose(q_edges, u_edges)
+        expected_uniform = np.linspace(reference.min(), reference.max(), 6)
+        assert u_edges == pytest.approx(np.unique(expected_uniform))
+
 
 class TestMMDDetector:
     """Tests for the MMD detector."""
@@ -132,6 +146,29 @@ class TestMMDDetector:
         detector.fit(reference)
         score = detector.score(reference)
         assert pytest.approx(score, abs=0.05) == 0.0
+
+    def test_bandwidth_resolved_once_and_stable_across_scores(self):
+        """Bandwidth must come from fit-time reference data, not per-score batches."""
+        rng = np.random.default_rng(7)
+        detector = MMDDetector(threshold=0.05)
+        reference = rng.normal(0, 1, (200, 2))
+        batch = rng.normal(3, 1, (200, 2))
+        detector.fit(reference)
+        assert detector._bandwidth_ is not None and detector._bandwidth_ > 0
+        first, second = detector._bandwidth_, None
+        s1 = detector.score(batch)
+        second = detector._bandwidth_
+        s2 = detector.score(batch)
+        assert first == second  # no re-estimation on score
+        assert s1 == pytest.approx(s2)
+        assert s1 > 0.01
+
+    def test_seeded_subsample_is_reproducible(self):
+        detector = MMDDetector(threshold=0.05, subsample=50, seed=123)
+        reference = np.random.normal(0, 1, (200, 2))
+        batch = np.random.normal(3, 1, (200, 2))
+        detector.fit(reference)
+        assert detector.score(batch) == pytest.approx(detector.score(batch))
 
     def test_different_distributions(self):
         detector = MMDDetector(threshold=0.05)

@@ -161,7 +161,13 @@ class ADWINDetector(BaseDetector):
             self._total -= removed
 
     def _detect_change(self) -> bool:
-        """Check for a change point by examining all split points.
+        """Check for a change point over dyadic candidate splits.
+
+        Uses prefix sums (O(W) per update instead of O(W^2) mean
+        recomputation) and checks O(log W) dyadic split points rather than
+        every possible split — the standard ADWIN optimisation (Bifet &
+        Gavalda 2007, §3.3). Every candidate split is still tested with the
+        Hoeffding-bound epsilon, so detection semantics are preserved.
 
         Returns
         -------
@@ -169,23 +175,38 @@ class ADWINDetector(BaseDetector):
             True if change detected, False otherwise.
         """
         n = len(self._window)
+        if n < self.min_window_size * 2:
+            return False
 
-        for split in range(self.min_window_size, n - self.min_window_size + 1):
-            left = self._window[:split]
-            right = self._window[split:]
+        arr = np.asarray(self._window, dtype=float)
+        prefix = np.concatenate(([0.0], np.cumsum(arr)))
+        total = prefix[-1]
 
-            n1 = len(left)
-            n2 = len(right)
-            mu1 = np.mean(left)
-            mu2 = np.mean(right)
+        # Dyadic splits: n/2, n/4, 3n/4, n/8, ... (powers of two offsets),
+        # plus the minimum-size boundaries.
+        splits: set[int] = set()
+        step = n // 2
+        while step >= self.min_window_size:
+            splits.add(step)
+            splits.add(n - step)
+            step //= 2
+        splits.add(self.min_window_size)
+        splits.add(n - self.min_window_size)
+
+        for split in sorted(splits):
+            if split < self.min_window_size or (n - split) < self.min_window_size:
+                continue
+            n1, n2 = split, n - split
+            mu1 = prefix[split] / n1
+            mu2 = (total - prefix[split]) / n2
 
             # Compute the threshold using the ADWIN inequality
             eps = self._compute_epsilon(n1, n2)
 
             if abs(mu1 - mu2) > eps:
                 # Change detected — shrink window
-                self._window = right
-                self._total = sum(right)
+                self._window = arr[split:].tolist()
+                self._total = float(total - prefix[split])
                 self._n_detections += 1
                 self._detected_change_points.append(len(self._window))
 
@@ -200,7 +221,15 @@ class ADWINDetector(BaseDetector):
     def _compute_epsilon(self, n1: int, n2: int) -> float:
         """Compute the ADWIN change detection threshold.
 
-        Uses the Hoeffding bound-based inequality from the ADWIN paper.
+        Uses the Hoeffding bound-based inequality from the ADWIN paper
+        (Bifet & Gavalda 2007, Theorem 1):
+
+            eps = sqrt( (1/(2m)) * ln(4n/delta) )
+
+        where ``n = n1 + n2`` and ``m = 1 / (1/n1 + 1/n2)`` is the harmonic
+        mean of the two sub-window sizes. The previous implementation used
+        ``sqrt(m * ln(2/delta) / (2n))``, which shrinks with ``n`` and
+        under-thresholds large windows (missed detections).
 
         Parameters
         ----------
@@ -215,11 +244,10 @@ class ADWINDetector(BaseDetector):
             Threshold for detecting change.
         """
         n = n1 + n2
-        # Reduction factor
-        m = 1.0 / n1 + 1.0 / n2
-        # ADWIN threshold
-        eps = np.sqrt(m * np.log(2.0 / self.delta) / (2 * n))
-        return eps
+        # Harmonic mean of the sub-window sizes: 1/m = 1/n1 + 1/n2
+        m = 1.0 / (1.0 / n1 + 1.0 / n2)
+        eps = np.sqrt((1.0 / (2.0 * m)) * np.log(4.0 * n / self.delta))
+        return float(eps)
 
     def score(self, batch) -> float:
         """Compute ADWIN score.

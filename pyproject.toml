@@ -74,7 +74,7 @@ all = [
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["production-drift-detection*"]
+include = ["production_drift_detection*"]
 
 [tool.setuptools.package-data]
 production-drift-detection = ["py.typed"]

@@ -9,6 +9,7 @@ Launch with:
 
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+import os
 
 import numpy as np
 import pandas as pd
@@ -32,10 +33,16 @@ from production_drift_detection.monitors.stream_monitor import StreamMonitor
 
 app = FastAPI(title="ProductionDriftDetection Dashboard", version="0.1.0")
 
+_ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get("DRIFT_DASHBOARD_CORS_ORIGINS", "http://localhost:8501").split(",")
+    if origin.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
+    allow_origins=_ALLOWED_ORIGINS,
+    allow_methods=["GET"],
     allow_headers=["*"],
 )
 
@@ -183,9 +190,11 @@ def get_confidence() -> Dict[str, Any]:
     degraded, reason = cm.degradation_detected()
     cal = cm.get_calibration_summary()
     return {
-        "confidence_history": cm._confidence_history,
-        "entropy_history": cm._entropy_history,
-        "margin_history": cm._margin_history,
+        # Histories are returned as length-limited summaries: full raw
+        # buffers can be large, so cap the tail sent to the dashboard.
+        "confidence_history": cm.get_confidence_history(limit=500),
+        "entropy_history": cm.get_entropy_history(limit=500),
+        "margin_history": cm.get_margin_history(limit=500),
         "trends": trends,
         "uncertainty": uncertainty,
         "degraded": degraded,

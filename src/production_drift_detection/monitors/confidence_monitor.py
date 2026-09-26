@@ -108,6 +108,18 @@ class ConfidenceMonitor:
 
         return batch_stats
 
+    def get_confidence_history(self, limit: int = 500) -> List[float]:
+        """Return the tail of the mean-confidence history (bounded for API use)."""
+        return list(self._confidence_history[-limit:])
+
+    def get_entropy_history(self, limit: int = 500) -> List[float]:
+        """Return the tail of the mean-entropy history (bounded for API use)."""
+        return list(self._entropy_history[-limit:])
+
+    def get_margin_history(self, limit: int = 500) -> List[float]:
+        """Return the tail of the mean-margin history (bounded for API use)."""
+        return list(self._margin_history[-limit:])
+
     def get_trends(self) -> Dict[str, Any]:
         """Analyze confidence trends over time.
 
