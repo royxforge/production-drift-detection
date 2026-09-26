@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Packaging (critical)**: `packages.find include` corrected to `production_drift_detection*` (was `production-drift-detection*`); the wheel previously contained no package and `import production_drift_detection` failed after `pip install`.
 - **MMD detector**: kernel bandwidth is resolved once at `fit` time from the reference sample and reused by every `score` call (previously re-estimated from each batch, mixing incompatible kernels); batch subsampling is seeded via the new `seed` parameter.
-- **PSI detector**: `bin_strategy` is honored — `"uniform"` now produces `linspace` edges instead of silently using quantiles for both strategies.
+- **PSI detector**: `bin_strategy` is honored -- `"uniform"` now produces `linspace` edges instead of silently using quantiles for both strategies.
 - **ADWIN detector**: change-detection threshold corrected to the paper's Hoeffding bound `sqrt((1/(2m))·ln(4n/δ))` (the old formula shrank with window size and missed detections); split search uses prefix sums over dyadic candidates (O(W)/update instead of O(W²) mean recomputation).
 - **DataFrame inputs**: `validate_array` accepts `pd.DataFrame` (previously `StreamMonitor.process_batch` typed `ndarray | DataFrame` but rejected DataFrames).
 
