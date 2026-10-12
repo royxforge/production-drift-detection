@@ -382,8 +382,10 @@ def run_rigorous_benchmark(output_path: str):
     w(f"\n  ROC AUC measures threshold-independent discriminative power.")
     w(f"  AUC = 0.5 means random guessing, AUC = 1.0 means perfect separation.\n")
 
+    cohens_d_covar = "Cohen's d (covar)"
+    cohens_d_pert = "Cohen's d (pert)"
     w(f"  {'Detector':<16} {'AUC (covariate)':<20} {'AUC (perturbation)':<22} "
-      f"{'Cohen\'s d (covar)':<20} {'Cohen\'s d (pert)':<20}")
+      f"{cohens_d_covar:<20} {cohens_d_pert:<20}")
     w("  " + "-" * 98)
     for name, _ in DETECTORS:
         aucs = [r["auc"] for r in all_results[name]]

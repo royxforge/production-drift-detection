@@ -5,7 +5,7 @@ Detect distribution shifts in production data, monitor model confidence,
 and trigger early warnings before model performance degrades.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.4.0"
 
 from production_drift_detection.detectors.base import BaseDetector
 from production_drift_detection.detectors.kl import KLDivergenceDetector

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Packaging metadata**: `pyproject.toml` had a malformed `version = "0.4.0""` line (stray quote) and `[tool.mypy] python_version` had been overwritten with the package version; both are corrected so the file parses (previously `pip`/`pytest` could not read the project config).
+- **Python 3.9-3.11 compatibility**: `benchmark_rigorous.py` built an f-string containing a backslash escape (`\'`) inside the expression, which is a syntax error before Python 3.12; the header labels are hoisted into local variables.
+- **Corrupted case-study notebook**: `notebooks/production_drift_detection_case_study.ipynb` stored raw newlines inside a JSON string, so the file was not valid JSON and could not be opened; the escapes are repaired.
+- **Version consistency**: `production_drift_detection.__version__` and the dashboard `FastAPI(version=...)` reported `0.1.0` instead of the released `0.4.0`; both now derive from the single package version.
+
 ## [0.4.0] - 2026-09-26
 
 ### Fixed

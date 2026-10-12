@@ -17,6 +17,7 @@ from fastapi import FastAPI, Query
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
+from production_drift_detection import __version__
 from production_drift_detection.alerts.schemas import Severity
 from production_drift_detection.correlation.confidence_drift import ConfidenceDriftCorrelation
 from production_drift_detection.data.synthetic_drift import DriftGenerator
@@ -31,7 +32,7 @@ from production_drift_detection.monitors.stream_monitor import StreamMonitor
 # Data initialization
 # ---------------------------------------------------------------------------
 
-app = FastAPI(title="ProductionDriftDetection Dashboard", version="0.1.0")
+app = FastAPI(title="ProductionDriftDetection Dashboard", version=__version__)
 
 _ALLOWED_ORIGINS = [
     origin.strip()
