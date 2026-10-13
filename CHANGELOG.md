@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-13
+
+### Added
+
+- **`driftdetect` command-line interface**: the detectors were only reachable from Python, so wiring a drift check into cron, CI, or an orchestrator meant writing a script first. The package now ships a `driftdetect` console script (equivalently `python -m production_drift_detection.cli`) with two subcommands:
+
+  ```bash
+  # Fit on the leading half of a column, test drift on the rest
+  driftdetect detect --input scores.csv --column score --detector psi --threshold 0.1
+  driftdetect detect --input scores.csv --column score --fail-on-drift --output report.json
+  driftdetect generate-sample --output sample.csv --rows 1000 --shift 2.0
+  ```
+
+  `detect` fits the chosen detector (`psi`, `kl`, `mmd`, or `adwin`) on the leading `--reference-fraction` of the column (default 0.5) and evaluates the trailing window, printing the verdict, score, threshold, and severity. `--output` writes the same report as JSON for dashboards, and `--fail-on-drift` exits `1` when drift is flagged so a scheduled job fails instead of only logging. Exit codes: `0` clean, `1` drift with `--fail-on-drift`, `2` invalid usage or unreadable input (missing file, absent column, an unknown detector name, or a `--reference-fraction` outside `(0, 1)`).
+
 ### Fixed
 
 - **Packaging metadata**: `pyproject.toml` had a malformed `version = "0.4.0""` line (stray quote) and `[tool.mypy] python_version` had been overwritten with the package version; both are corrected so the file parses (previously `pip`/`pytest` could not read the project config).

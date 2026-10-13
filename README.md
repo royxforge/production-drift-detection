@@ -25,6 +25,7 @@
 - [Repository Structure](#repository-structure)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
+- [Command-Line Interface](#command-line-interface)
 - [Confidence Monitoring](#confidence-monitoring)
 - [Model Integrations](#model-integrations)
 - [Synthetic Drift Generation](#synthetic-drift-generation)
@@ -278,6 +279,38 @@ for batch_idx in range(10):
     result = monitor.process_batch(batch)
     print(f"Batch {batch_idx}: Status={result['status']}")
 ```
+
+---
+
+## Command-Line Interface
+
+The `driftdetect` console script runs a detector over a CSV column and can gate a
+scheduled job on the result:
+
+```bash
+# Fit on the leading 50% of `score`, test drift on the trailing 50%
+driftdetect detect --input scores.csv --column score --detector psi --threshold 0.1
+
+# Gate a cron/CI job: exit 1 when drift is flagged, and save the JSON report
+driftdetect detect --input scores.csv --column score --fail-on-drift --output report.json
+
+# Emit a demo CSV (second half shifted) to try the detectors without real data
+driftdetect generate-sample --output sample.csv --rows 1000 --shift 2.0
+```
+
+`detect` options: `--input/-i` (CSV path), `--column/-c` (numeric column, at least
+10 values), `--detector/-d` (`psi`, `kl`, `mmd`, or `adwin`; default `psi`),
+`--threshold/-t` (default `0.1`), `--reference-fraction` (leading share used as
+reference, default `0.5`), `--output/-o` (write the report as JSON), and
+`--fail-on-drift`.
+
+| Exit code | Meaning |
+|---|---|
+| `0` | No drift detected (or drift without `--fail-on-drift`) |
+| `1` | Drift detected and `--fail-on-drift` was set |
+| `2` | Invalid usage or unreadable input (missing file, unknown column, unknown detector, bad fraction) |
+
+`python -m production_drift_detection.cli` is equivalent to `driftdetect`.
 
 ---
 
