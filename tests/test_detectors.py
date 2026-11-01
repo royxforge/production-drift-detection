@@ -104,8 +104,9 @@ class TestPSIDetector:
         assert score > 0.05
 
     def test_per_feature_reporting(self):
-        detector = PSIDetector(threshold=0.1, n_bins=5, per_feature=True,
-                               feature_names=["a", "b", "c"])
+        detector = PSIDetector(
+            threshold=0.1, n_bins=5, per_feature=True, feature_names=["a", "b", "c"]
+        )
         reference = np.random.normal(0, 1, (500, 3))
         batch = np.random.normal(2, 1, (500, 3))
         detector.fit(reference)

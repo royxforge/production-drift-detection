@@ -1,7 +1,6 @@
 """Tests for the synthetic drift generator."""
 
 import numpy as np
-import pytest
 
 from production_drift_detection.data.synthetic_drift import DriftGenerator
 
@@ -105,6 +104,7 @@ class TestDataLoader:
 
     def test_load_synthetic(self):
         from production_drift_detection.data.loaders import DataLoader
+
         loader = DataLoader(random_state=42)
         data = loader.load_synthetic_classification(n_samples=500, n_features=5)
         assert "X_train" in data
@@ -114,15 +114,15 @@ class TestDataLoader:
 
     def test_stream_batches_no_drift(self):
         from production_drift_detection.data.loaders import DataLoader
+
         loader = DataLoader(random_state=42)
         data = loader.load_synthetic_classification(n_samples=500, n_features=5)
-        batches = loader.generate_stream_batches(
-            data["X_train"], n_batches=5, batch_size=50
-        )
+        batches = loader.generate_stream_batches(data["X_train"], n_batches=5, batch_size=50)
         assert len(batches) == 5
 
     def test_stream_batches_with_drift(self):
         from production_drift_detection.data.loaders import DataLoader
+
         loader = DataLoader(random_state=42)
         data = loader.load_synthetic_classification(n_samples=500, n_features=5)
         batches = loader.generate_stream_batches(
@@ -139,6 +139,7 @@ class TestDataLoader:
 
     def test_image_drift_demo(self):
         from production_drift_detection.data.loaders import DataLoader
+
         loader = DataLoader(random_state=42)
         result = loader.generate_image_drift_demo(
             image_size=8, n_reference=50, n_batches=5, batch_size=10

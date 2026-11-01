@@ -12,14 +12,12 @@ The module implements:
 - Trend statistics and visualization data
 """
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
 
-from production_drift_detection.monitors.confidence_monitor import ConfidenceMonitor
 from production_drift_detection.utils.logging import get_logger
-from production_drift_detection.utils.stats import compute_entropy
 
 
 class ConfidenceDriftCorrelation:
@@ -183,11 +181,25 @@ class ConfidenceDriftCorrelation:
                 if len(c_lag) > 2 and len(d_lag) > 2:
                     corr_lag = float(np.corrcoef(c_lag, d_lag)[0, 1])
 
-                correlations.append({"lag": lag, "confidence_leads_drift": corr_lead, "drift_leads_confidence": corr_lag})
+                correlations.append(
+                    {
+                        "lag": lag,
+                        "confidence_leads_drift": corr_lead,
+                        "drift_leads_confidence": corr_lag,
+                    }
+                )
 
         # Determine optimal lead-lag
-        lead_corrs = [c.get("confidence_leads_drift", 0) for c in correlations if "confidence_leads_drift" in c]
-        lag_corrs = [c.get("drift_leads_confidence", 0) for c in correlations if "drift_leads_confidence" in c]
+        lead_corrs = [
+            c.get("confidence_leads_drift", 0)
+            for c in correlations
+            if "confidence_leads_drift" in c
+        ]
+        lag_corrs = [
+            c.get("drift_leads_confidence", 0)
+            for c in correlations
+            if "drift_leads_confidence" in c
+        ]
 
         best_lead_lag = 0
         simultaneous_corr = abs(correlations[0].get("correlation", 0)) if correlations else 0
@@ -235,7 +247,7 @@ class ConfidenceDriftCorrelation:
 
         # Confidence degradation rate (negative = dropping)
         first_half = np.mean(conf[: len(conf) // 2])
-        second_half = np.mean(conf[len(conf) // 2:])
+        second_half = np.mean(conf[len(conf) // 2 :])
         degradation_rate = (second_half - first_half) / max(first_half, 1e-10)
 
         # Drift acceleration
@@ -244,7 +256,7 @@ class ConfidenceDriftCorrelation:
             if len(drift_vals) >= 4:
                 d = np.array(drift_vals)
                 first_drift = np.mean(d[: len(d) // 2])
-                second_drift = np.mean(d[len(d) // 2:])
+                second_drift = np.mean(d[len(d) // 2 :])
                 accel = (second_drift - first_drift) / max(first_drift, 1e-10)
                 drift_acceleration = max(drift_acceleration, accel)
 
@@ -318,11 +330,18 @@ class ConfidenceDriftCorrelation:
             "n_early_warnings": len(self._early_warnings),
             "early_warning_score": score.get("early_warning_score", 0),
             "confidence_trend": (
-                "decreasing" if self._confidence_history and self._confidence_history[-1] < np.mean(self._confidence_history[:2])
-                else "stable"
-            ) if len(self._confidence_history) >= 2 else "insufficient",
+                (
+                    "decreasing"
+                    if self._confidence_history
+                    and self._confidence_history[-1] < np.mean(self._confidence_history[:2])
+                    else "stable"
+                )
+                if len(self._confidence_history) >= 2
+                else "insufficient"
+            ),
             "confidence_is_leading_indicator": any(
-                cc.get("confidence_is_leading_indicator", False) for cc in cross_correlations.values()
+                cc.get("confidence_is_leading_indicator", False)
+                for cc in cross_correlations.values()
             ),
             "cross_correlations": cross_correlations,
             "explanation": (

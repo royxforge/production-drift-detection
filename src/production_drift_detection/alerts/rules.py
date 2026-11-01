@@ -1,7 +1,7 @@
 """Alert rules and engine for ProductionDriftDetection."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Union
+from typing import Dict, List, Optional
 
 import numpy as np
 
@@ -13,7 +13,9 @@ class BaseRule(ABC):
     """Abstract base class for alert rules."""
 
     @abstractmethod
-    def evaluate(self, detector_name: str, score: float, threshold: float, **kwargs) -> Optional[Alert]:
+    def evaluate(
+        self, detector_name: str, score: float, threshold: float, **kwargs
+    ) -> Optional[Alert]:
         """Evaluate a score against this rule.
 
         Parameters
@@ -50,7 +52,9 @@ class ThresholdRule(BaseRule):
         self.warning_multiplier = warning_multiplier
         self.critical_multiplier = critical_multiplier
 
-    def evaluate(self, detector_name: str, score: float, threshold: float, **kwargs) -> Optional[Alert]:
+    def evaluate(
+        self, detector_name: str, score: float, threshold: float, **kwargs
+    ) -> Optional[Alert]:
         """Evaluate score against threshold levels.
 
         Returns
@@ -67,7 +71,10 @@ class ThresholdRule(BaseRule):
                 score=score,
                 threshold=critical_threshold,
                 severity=Severity.CRITICAL,
-                explanation=f"Critical drift: score {score:.4f} exceeds critical threshold {critical_threshold:.4f}",
+                explanation=(
+                    f"Critical drift: score {score:.4f} exceeds critical "
+                    f"threshold {critical_threshold:.4f}"
+                ),
                 metadata={"base_threshold": threshold},
             )
         elif score > warning_threshold:
@@ -107,7 +114,9 @@ class RollingWindowRule(BaseRule):
         self.min_consecutive = min_consecutive
         self._history: Dict[str, List[float]] = {}
 
-    def evaluate(self, detector_name: str, score: float, threshold: float, **kwargs) -> Optional[Alert]:
+    def evaluate(
+        self, detector_name: str, score: float, threshold: float, **kwargs
+    ) -> Optional[Alert]:
         """Evaluate score using rolling window statistics.
 
         Returns
@@ -123,14 +132,14 @@ class RollingWindowRule(BaseRule):
         # Keep only recent history
         history = self._history[detector_name]
         if len(history) > self.window_size:
-            history = history[-self.window_size:]
+            history = history[-self.window_size :]
             self._history[detector_name] = history
 
         if len(history) < self.min_consecutive:
             return None
 
         # Check consecutive exceedances
-        recent = history[-self.min_consecutive:]
+        recent = history[-self.min_consecutive :]
         if all(s > threshold for s in recent):
             mean_score = float(np.mean(recent))
             return Alert(
@@ -138,7 +147,10 @@ class RollingWindowRule(BaseRule):
                 score=mean_score,
                 threshold=threshold,
                 severity=Severity.WARNING,
-                explanation=f"Rolling window alert: {self.min_consecutive} consecutive scores above threshold",
+                explanation=(
+                    f"Rolling window alert: {self.min_consecutive} consecutive "
+                    "scores above threshold"
+                ),
                 metadata={"recent_scores": recent, "window_size": self.window_size},
             )
 

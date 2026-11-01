@@ -3,7 +3,7 @@
 Provides utilities for wrapping scikit-learn models with drift monitoring.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 import numpy as np
 from sklearn.base import BaseEstimator

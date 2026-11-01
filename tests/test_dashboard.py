@@ -1,7 +1,6 @@
 """Tests for dashboard data preparation."""
 
 import numpy as np
-import pytest
 
 from production_drift_detection.dashboard.visuals import Visualizer
 from production_drift_detection.data.synthetic_drift import DriftGenerator

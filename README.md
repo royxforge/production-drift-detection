@@ -7,10 +7,18 @@
   <img src="https://img.shields.io/badge/HuggingFace-FFD21E?style=flat-square&logo=huggingface&logoColor=black" />
   <img src="https://img.shields.io/badge/Scikit--learn-F7931E?style=flat-square&logo=scikitlearn&logoColor=white" />
   <img src="https://img.shields.io/badge/Dashboard-FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white" />
+  <a href="https://github.com/royxforge/production-drift-detection/actions/workflows/ci.yml"><img src="https://github.com/royxforge/production-drift-detection/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <img src="https://img.shields.io/badge/License-MIT-6366f1?style=flat-square" />
 </p>
 
-> A lightweight, pip-installable Python library for monitoring data drift and model confidence in production ML systems. Detects when real-world data begins diverging from the training distribution - before model performance visibly degrades.
+> **A pip-installable library that watches for data drift and confidence decay in a live model before the labels arrive to tell you something is wrong.** Four detectors (KL, PSI, MMD, ADWIN) share one `fit`/`score`/`detect` API, with streaming, rolling statistics, alerting and a dashboard. Synthetic drift generation means you can evaluate it without touching production data.
+>
+> **Result:** across 20 seeds, MMD and KL divergence flag drift with a **0.0% false-positive rate** on clean data, while PSI and ADWIN catch almost everything (**100%** and **97.7%** detection) at **39.9%** and **46.5%** FPR — the precision/recall trade-off between detectors, measured rather than asserted.
+>
+> **Try it on CPU:** `python benchmarks.py`
+
+<img src="docs/demo.gif" alt="Terminal demo: driftdetect generate-sample then detect - CPU only" width="820" />
+
 
 ---
 
@@ -469,7 +477,7 @@ Confidence is continuous - it responds to small perturbations. Accuracy is disco
 
 - [Unsupervised Confidence Estimation](https://github.com/royxforge/unsupervised-confidence-estimation) - Unsupervised Confidence Estimation
 - [Parameter Efficient Fine Tuning](https://github.com/royxforge/parameter-efficient-fine-tuning) - Efficient LLM fine-tuning
-- [UniTSFM](https://github.com/royxforge/unified-time-series-foundation-model) - Per-horizon uncertainty signals (CRPS, quantile spread) exposed by a unified forecasting API for population-level drift monitoring
+- [UniTSFM](https://github.com/royxforge/uniftsm) - Per-horizon uncertainty signals (CRPS, quantile spread) exposed by a unified forecasting API for population-level drift monitoring
 
 ---
 

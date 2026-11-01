@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Lint step was failing on every run**: CI runs `black --check`, `isort --check-only` and `flake8` over `src tests`, but the tree was not formatted (28 files) and flake8 had no configuration, so it enforced its 79-character default against 100-character code. A `.flake8` (100 characters, `E203`/`W503` ignored for black compatibility) now exists, the tree is formatted, and unused imports/variables flagged by pyflakes were removed (`server.py` also dropped a `global` declaration that only mutated a list in place).
+- **README benchmark headline contradicted its own table**: the summary line claimed ADWIN ran at a 0.80 false-positive rate on a 10-batch run, while the 20-seed table below it (backed by `benchmark_results_rigorous.txt`) reports 46.5% ± 6.2%. The headline now cites the committed numbers: MMD and KL at 0.0% FPR, PSI and ADWIN at 39.9% and 46.5% FPR for 100% and 97.7% detection.
+
 ## [0.5.0] - 2026-10-13
 
 ### Added

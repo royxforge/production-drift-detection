@@ -4,11 +4,10 @@ Provides utilities for loading common datasets and preparing them
 for drift monitoring demonstrations.
 """
 
-from typing import Optional, Tuple
+from typing import Optional
 
 import numpy as np
-import pandas as pd
-from sklearn.datasets import make_classification, load_breast_cancer, load_iris
+from sklearn.datasets import load_breast_cancer, load_iris, make_classification
 
 from production_drift_detection.utils.logging import get_logger
 
@@ -174,14 +173,19 @@ class DataLoader:
                 drift_type = drift_config.get("drift_type", "covariate_shift")
                 if drift_type == "covariate_shift":
                     batch = generator.covariate_shift(
-                        n_samples=batch_size, shift_magnitude=magnitude * (batch_idx - drift_config["start_batch"] + 1) * 0.2
+                        n_samples=batch_size,
+                        shift_magnitude=magnitude
+                        * (batch_idx - drift_config["start_batch"] + 1)
+                        * 0.2,
                     )
                 elif drift_type == "noise":
                     ref_sample = reference_data[self._rng.choice(len(reference_data), batch_size)]
                     batch = generator.gaussian_noise_drift(ref_sample, noise_std=magnitude * 0.2)
                 elif drift_type == "feature_perturbation":
                     ref_sample = reference_data[self._rng.choice(len(reference_data), batch_size)]
-                    batch = generator.feature_perturbation_drift(ref_sample, noise_std=magnitude * 0.2)
+                    batch = generator.feature_perturbation_drift(
+                        ref_sample, noise_std=magnitude * 0.2
+                    )
                 else:
                     batch = generator.covariate_shift(
                         n_samples=batch_size, shift_magnitude=magnitude
@@ -223,6 +227,7 @@ class DataLoader:
             Dictionary with reference_data and batches.
         """
         from production_drift_detection.data.synthetic_drift import DriftGenerator
+
         n_pixels = image_size * image_size
         generator = DriftGenerator(n_features=n_pixels, random_state=self.random_state)
 
@@ -234,9 +239,7 @@ class DataLoader:
         for batch_idx in range(n_batches):
             magnitude = batch_idx * 0.3
             if magnitude > 0:
-                batch = generator.covariate_shift(
-                    n_samples=batch_size, shift_magnitude=magnitude
-                )
+                batch = generator.covariate_shift(n_samples=batch_size, shift_magnitude=magnitude)
             else:
                 idx = self._rng.choice(len(reference), batch_size)
                 batch = reference[idx].copy()

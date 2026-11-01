@@ -7,7 +7,7 @@ The algorithm maintains a window of recent observations and adaptively
 shrinks it when a statistically significant change in the mean is detected.
 """
 
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 import numpy as np
 
@@ -92,9 +92,7 @@ class ADWINDetector(BaseDetector):
 
         self._reference_data = data
         self._fitted = True
-        self._logger.info(
-            f"Fitted ADWIN detector with window size {len(self._window)}"
-        )
+        self._logger.info(f"Fitted ADWIN detector with window size {len(self._window)}")
         return self
 
     def _compute_score(self, reference: np.ndarray, batch: np.ndarray) -> float:
@@ -116,7 +114,7 @@ class ADWINDetector(BaseDetector):
             return 0.0
 
         # Calculate the current window statistics
-        window_arr = np.array(self._window[-min(len(self._window), 100):])
+        window_arr = np.array(self._window[-min(len(self._window), 100) :])
         batch_arr = np.array(batch_flat)
 
         # The score is the absolute normalized difference in means
@@ -293,13 +291,15 @@ class ADWINDetector(BaseDetector):
 
     def summary(self):
         base = super().summary()
-        base.update({
-            "window_size": len(self._window),
-            "max_window_size": self.max_window_size,
-            "n_detections": self._n_detections,
-            "delta": self.delta,
-            "current_mean": float(np.mean(self._window)) if self._window else None,
-        })
+        base.update(
+            {
+                "window_size": len(self._window),
+                "max_window_size": self.max_window_size,
+                "n_detections": self._n_detections,
+                "delta": self.delta,
+                "current_mean": float(np.mean(self._window)) if self._window else None,
+            }
+        )
         return base
 
     def reset(self):

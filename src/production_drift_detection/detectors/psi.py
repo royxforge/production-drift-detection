@@ -1,11 +1,11 @@
 """Population Stability Index (PSI) drift detector for numerical and categorical features."""
 
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional
 
 import numpy as np
 
 from production_drift_detection.detectors.base import BaseDetector
-from production_drift_detection.utils.stats import compute_psi_bins, smooth_distribution
+from production_drift_detection.utils.stats import smooth_distribution
 from production_drift_detection.utils.validation import validate_array
 
 
@@ -69,13 +69,9 @@ class PSIDetector(BaseDetector):
             # Bin edges from the REFERENCE distribution only, honouring the
             # configured strategy (previous code always used percentiles).
             if self.bin_strategy == "uniform":
-                bin_edges = np.linspace(
-                    np.min(feature_data), np.max(feature_data), self.n_bins + 1
-                )
+                bin_edges = np.linspace(np.min(feature_data), np.max(feature_data), self.n_bins + 1)
             else:  # "quantile"
-                bin_edges = np.percentile(
-                    feature_data, np.linspace(0, 100, self.n_bins + 1)
-                )
+                bin_edges = np.percentile(feature_data, np.linspace(0, 100, self.n_bins + 1))
             bin_edges = np.unique(bin_edges)
             if len(bin_edges) < 2:
                 bin_edges = np.array([np.min(feature_data), np.max(feature_data) + 1e-6])
@@ -144,12 +140,14 @@ class PSIDetector(BaseDetector):
 
     def summary(self):
         base = super().summary()
-        base.update({
-            "n_features": self._n_features,
-            "n_bins": self.n_bins,
-            "bin_strategy": self.bin_strategy,
-            "per_feature": self.per_feature,
-        })
+        base.update(
+            {
+                "n_features": self._n_features,
+                "n_bins": self.n_bins,
+                "bin_strategy": self.bin_strategy,
+                "per_feature": self.per_feature,
+            }
+        )
         if self._per_feature_scores:
             latest = self._per_feature_scores[-1]
             sorted_features = sorted(latest.items(), key=lambda x: x[1], reverse=True)

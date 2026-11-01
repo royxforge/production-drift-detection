@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from production_drift_detection.detectors.kl import KLDivergenceDetector
 from production_drift_detection.detectors.psi import PSIDetector
 from production_drift_detection.monitors.confidence_monitor import ConfidenceMonitor
 from production_drift_detection.monitors.stream_monitor import StreamMonitor
@@ -71,7 +70,7 @@ class TestStreamMonitor:
         # Process shifted batches
         for _ in range(5):
             batch = np.random.normal(5, 1, (100, 3))
-            result = monitor.process_batch(batch)
+            monitor.process_batch(batch)
 
         # Should have some detections or alerts
         assert monitor._batch_count >= 8
@@ -115,6 +114,7 @@ class TestStreamMonitor:
         exported = monitor.export_results(format="json")
         assert isinstance(exported, str)
         import json
+
         parsed = json.loads(exported)
         assert len(parsed) == 3
 
@@ -144,6 +144,7 @@ class TestStreamMonitor:
         result = monitor.export_results(format="csv", filepath=filepath)
         assert result is None  # Returns None when writing to file
         import os
+
         assert os.path.exists(filepath)
         with open(filepath) as f:
             content = f.read()
@@ -163,8 +164,10 @@ class TestStreamMonitor:
         result = monitor.export_results(format="json", filepath=filepath)
         assert result is None
         import os
+
         assert os.path.exists(filepath)
         import json
+
         with open(filepath) as f:
             data = json.load(f)
         assert len(data) == 3

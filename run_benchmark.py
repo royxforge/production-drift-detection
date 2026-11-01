@@ -15,19 +15,19 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from production_drift_detection.detectors.kl import KLDivergenceDetector
-from production_drift_detection.detectors.psi import PSIDetector
-from production_drift_detection.detectors.mmd import MMDDetector
-from production_drift_detection.detectors.adwin import ADWINDetector
 from production_drift_detection.data.synthetic_drift import DriftGenerator
+from production_drift_detection.detectors.adwin import ADWINDetector
+from production_drift_detection.detectors.kl import KLDivergenceDetector
+from production_drift_detection.detectors.mmd import MMDDetector
+from production_drift_detection.detectors.psi import PSIDetector
+from production_drift_detection.evaluation.benchmarks import BenchmarkFramework
 from production_drift_detection.evaluation.metrics import (
     compute_detection_latency,
-    compute_false_positive_rate,
     compute_detection_stability,
+    compute_false_positive_rate,
     compute_sensitivity_to_drift,
     evaluate_detector,
 )
-from production_drift_detection.evaluation.benchmarks import BenchmarkFramework
 
 
 def fmt(val, decimals=6):
@@ -47,9 +47,9 @@ def run_latency_fpr_benchmark(output_path: str):
     # ── Detectors ──────────────────────────────────────────────────
     detectors = [
         ("KLDivergence", KLDivergenceDetector(threshold=0.1, is_categorical=False, n_bins=20)),
-        ("PSI",           PSIDetector(threshold=0.1, n_bins=10)),
-        ("MMD",           MMDDetector(threshold=0.05, subsample=200)),
-        ("ADWIN",         ADWINDetector(threshold=0.1, delta=0.05)),
+        ("PSI", PSIDetector(threshold=0.1, n_bins=10)),
+        ("MMD", MMDDetector(threshold=0.05, subsample=200)),
+        ("ADWIN", ADWINDetector(threshold=0.1, delta=0.05)),
     ]
 
     rng = np.random.default_rng(42)
@@ -57,6 +57,7 @@ def run_latency_fpr_benchmark(output_path: str):
     reference = generator.generate_reference()
 
     lines = []
+
     def w(s=""):
         lines.append(s)
 
@@ -83,14 +84,19 @@ def run_latency_fpr_benchmark(output_path: str):
     # Run benchmark at multiple drift magnitudes
     for magnitude in [0.5, 1.0, 2.0, 3.0]:
         w(f"\n  ── Drift magnitude: {magnitude:.1f} ──")
-        w(f"  {'Detector':<14} {'Threshold':<10} {'FPR':<12} {'Latency (batches)':<18} "
-          f"{'Detected?':<12} {'Detection Rate':<16} {'Stability':<12}")
+        w(
+            f"  {'Detector':<14} {'Threshold':<10} {'FPR':<12} {'Latency (batches)':<18} "
+            f"{'Detected?':<12} {'Detection Rate':<16} {'Stability':<12}"
+        )
         w("  " + "-" * 94)
 
         results = framework.run_benchmark(
-            n_features=5, n_reference=1000,
-            n_clean_batches=5, n_drift_batches=10,
-            batch_size=100, drift_magnitude=magnitude,
+            n_features=5,
+            n_reference=1000,
+            n_clean_batches=5,
+            n_drift_batches=10,
+            batch_size=100,
+            drift_magnitude=magnitude,
             drift_type="covariate",
         )
 
@@ -101,8 +107,10 @@ def run_latency_fpr_benchmark(output_path: str):
             dr = fmt(row.get("detection_rate"), 2)
             stab = fmt(row.get("stability"), 4)
             thresh = fmt(row.get("threshold"), 4)
-            w(f"  {row['detector']:<14} {thresh:<10} {fpr_v:<12} {lat:<18} "
-              f"{det:<12} {dr:<16} {stab:<12}")
+            w(
+                f"  {row['detector']:<14} {thresh:<10} {fpr_v:<12} {lat:<18} "
+                f"{det:<12} {dr:<16} {stab:<12}"
+            )
 
     # ── 2. SENSITIVITY ANALYSIS ────────────────────────────────────
     w("\n" + "=" * 80)
@@ -148,9 +156,13 @@ def run_latency_fpr_benchmark(output_path: str):
     w("=" * 80)
 
     data = framework._generate_benchmark_data(
-        n_features=5, n_reference=1000,
-        n_clean_batches=5, n_drift_batches=10,
-        batch_size=100, drift_magnitude=2.0, drift_type="covariate",
+        n_features=5,
+        n_reference=1000,
+        n_clean_batches=5,
+        n_drift_batches=10,
+        batch_size=100,
+        drift_magnitude=2.0,
+        drift_type="covariate",
     )
 
     for det_name, detector in detectors:
@@ -163,22 +175,36 @@ def run_latency_fpr_benchmark(output_path: str):
 
         scores_arr = np.array(all_scores)
 
-        fpr_metrics = compute_false_positive_rate(scores_arr, detector.threshold, data["drift_start_batch"])
-        latency_metrics = compute_detection_latency(scores_arr, detector.threshold, data["drift_start_batch"])
+        fpr_metrics = compute_false_positive_rate(
+            scores_arr, detector.threshold, data["drift_start_batch"]
+        )
+        latency_metrics = compute_detection_latency(
+            scores_arr, detector.threshold, data["drift_start_batch"]
+        )
         stability_metrics = compute_detection_stability(scores_arr)
 
         w(f"\n  ── {det_name} ──")
         w(f"    Threshold:                       {detector.threshold:.4f}")
-        w(f"    FPR (before drift):              {fpr_metrics['false_positive_rate']:.4%}  "
-          f"({fpr_metrics['false_positives']}/{fpr_metrics['total_pre_drift']} pre-drift batches)")
-        w(f"    Detection latency (batches):     {latency_metrics.get('detection_latency_batches', 'N/A')}")
-        w(f"    Detection latency (samples):     {latency_metrics.get('detection_latency_samples', 'N/A')}")
+        w(
+            f"    FPR (before drift):              {fpr_metrics['false_positive_rate']:.4%}  "
+            f"({fpr_metrics['false_positives']}/{fpr_metrics['total_pre_drift']} pre-drift batches)"
+        )
+        w(
+            f"    Detection latency (batches):     {latency_metrics.get('detection_latency_batches', 'N/A')}"
+        )
+        w(
+            f"    Detection latency (samples):     {latency_metrics.get('detection_latency_samples', 'N/A')}"
+        )
         w(f"    Drift detected:                  {latency_metrics.get('drift_detected', False)}")
         w(f"    Detection rate:                  {latency_metrics.get('detection_rate', 0):.2%}")
         w(f"    Stability:                       {stability_metrics['stability']:.4f}")
-        w(f"    Score mean / std:                {stability_metrics['score_mean']:.6f} / {stability_metrics['score_std']:.6f}")
+        w(
+            f"    Score mean / std:                {stability_metrics['score_mean']:.6f} / {stability_metrics['score_std']:.6f}"
+        )
         w(f"    Autocorrelation:                 {stability_metrics.get('autocorrelation', 0):.4f}")
-        w(f"    Coefficient of variation:        {stability_metrics.get('coefficient_of_variation', 0):.4f}")
+        w(
+            f"    Coefficient of variation:        {stability_metrics.get('coefficient_of_variation', 0):.4f}"
+        )
 
     # ── 4. DRIFT TYPE COMPARISON ───────────────────────────────────
     w("\n" + "=" * 80)
@@ -190,12 +216,16 @@ def run_latency_fpr_benchmark(output_path: str):
         ft = BenchmarkFramework([d[1] for d in detectors], random_state=42)
         res = ft.run_benchmark(drift_magnitude=2.0, drift_type=drift_type)
 
-        w(f"  {'Detector':<14} {'FPR':<12} {'Latency (batches)':<18} {'Detected?':<12} {'Stability':<12} {'Det Rate':<12}")
+        w(
+            f"  {'Detector':<14} {'FPR':<12} {'Latency (batches)':<18} {'Detected?':<12} {'Stability':<12} {'Det Rate':<12}"
+        )
         w("  " + "-" * 80)
         for _, row in res.iterrows():
-            w(f"  {row['detector']:<14} {fmt(row['fpr'], 4):<12} "
-              f"{fmt(row.get('detection_latency')):<18} {fmt(row.get('drift_detected')):<12} "
-              f"{fmt(row.get('stability'), 4):<12} {fmt(row.get('detection_rate'), 2):<12}")
+            w(
+                f"  {row['detector']:<14} {fmt(row['fpr'], 4):<12} "
+                f"{fmt(row.get('detection_latency')):<18} {fmt(row.get('drift_detected')):<12} "
+                f"{fmt(row.get('stability'), 4):<12} {fmt(row.get('detection_rate'), 2):<12}"
+            )
 
     # ── 5. ADWIN STREAMING BENCHMARK ───────────────────────────────
     w("\n" + "=" * 80)
@@ -204,14 +234,16 @@ def run_latency_fpr_benchmark(output_path: str):
 
     gen = DriftGenerator(n_features=1, n_reference=500, random_state=42)
     ref = gen.generate_reference()
-    gradual_data = gen.gradual_drift(n_steps=20, n_per_step=50, start_magnitude=0.0, end_magnitude=3.0)
+    gradual_data = gen.gradual_drift(
+        n_steps=20, n_per_step=50, start_magnitude=0.0, end_magnitude=3.0
+    )
 
     adwin = ADWINDetector(threshold=0.1, delta=0.05)
     adwin.fit(ref)
 
     scores = []
     for i in range(20):
-        batch = gradual_data[i * 50:(i + 1) * 50]
+        batch = gradual_data[i * 50 : (i + 1) * 50]
         result = adwin.detect(batch)
         scores.append(result["score"])
 
@@ -222,7 +254,9 @@ def run_latency_fpr_benchmark(output_path: str):
     w(f"\n    Mean ADWIN score:           {np.mean(scores):.4f}")
     w(f"    Max ADWIN score:            {max(scores):.4f}")
     w(f"    Drift detected in:          {sum(1 for s in scores if s > 0.1)}/{len(scores)} batches")
-    w(f"    Detection latency:          {adwin_latency.get('detection_latency_batches', 'N/A')} batches")
+    w(
+        f"    Detection latency:          {adwin_latency.get('detection_latency_batches', 'N/A')} batches"
+    )
     w(f"    FPR (pre-drift):            {adwin_fpr['false_positive_rate']:.4%}")
 
     # ── 6. CONFIDENCE EARLY WARNING ────────────────────────────────
@@ -230,8 +264,8 @@ def run_latency_fpr_benchmark(output_path: str):
     w("  6. CONFIDENCE EARLY WARNING EFFECTIVENESS")
     w("=" * 80)
 
-    from production_drift_detection.monitors.confidence_monitor import ConfidenceMonitor
     from production_drift_detection.correlation.confidence_drift import ConfidenceDriftCorrelation
+    from production_drift_detection.monitors.confidence_monitor import ConfidenceMonitor
 
     cm = ConfidenceMonitor()
     corr = ConfidenceDriftCorrelation(max_lag=5)
@@ -255,7 +289,11 @@ def run_latency_fpr_benchmark(output_path: str):
         corr.add_observation(
             confidence=confidence,
             drift_scores={"psi": drift_score, "kl": drift_score * 0.8, "mmd": drift_score * 0.4},
-            entropy=-confidence * np.log(confidence) - (1 - confidence) * np.log(1 - confidence) if 0 < confidence < 1 else 0,
+            entropy=(
+                -confidence * np.log(confidence) - (1 - confidence) * np.log(1 - confidence)
+                if 0 < confidence < 1
+                else 0
+            ),
             margin=abs(2 * confidence - 1),
         )
 
@@ -273,8 +311,10 @@ def run_latency_fpr_benchmark(output_path: str):
     w("\n" + "=" * 80)
     w("  BENCHMARK SUMMARY")
     w("=" * 80)
-    w(f"\n  {'Detector':<14} {'FPR (mag=1.0)':<16} {'FPR (mag=2.0)':<16} "
-      f"{'Latency (mag=1.0)':<18} {'Latency (mag=2.0)':<18} {'Sensitivity':<14}")
+    w(
+        f"\n  {'Detector':<14} {'FPR (mag=1.0)':<16} {'FPR (mag=2.0)':<16} "
+        f"{'Latency (mag=1.0)':<18} {'Latency (mag=2.0)':<18} {'Sensitivity':<14}"
+    )
     w("  " + "-" * 96)
 
     for mag_small, mag_large in [(1.0, 2.0)]:

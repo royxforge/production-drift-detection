@@ -159,14 +159,16 @@ class HFAdapter:
             input_ids = encoding["input_ids"][0]
             attention_mask = encoding["attention_mask"][0]
 
-            feature_vec = np.array([
-                np.mean(input_ids),
-                np.std(input_ids),
-                np.sum(attention_mask),
-                np.sum(input_ids > self.tokenizer.vocab_size // 2),
-                len(text.split()),
-                np.mean([ord(c) for c in text[:min(len(text), 100)]]),
-            ])
+            feature_vec = np.array(
+                [
+                    np.mean(input_ids),
+                    np.std(input_ids),
+                    np.sum(attention_mask),
+                    np.sum(input_ids > self.tokenizer.vocab_size // 2),
+                    len(text.split()),
+                    np.mean([ord(c) for c in text[: min(len(text), 100)]]),
+                ]
+            )
             features.append(feature_vec)
 
         return np.array(features)

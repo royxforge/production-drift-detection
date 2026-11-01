@@ -255,9 +255,7 @@ class DriftGenerator:
         if n_corrupt_features is None:
             n_corrupt_features = max(1, self.n_features // 2)
 
-        corrupt_features = self._rng.choice(
-            self.n_features, size=n_corrupt_features, replace=False
-        )
+        corrupt_features = self._rng.choice(self.n_features, size=n_corrupt_features, replace=False)
         for col in corrupt_features:
             noise = self._rng.normal(0, noise_std, len(data))
             data[:, col] += noise
@@ -311,9 +309,7 @@ class DriftGenerator:
         if n_corrupt_features is None:
             n_corrupt_features = max(1, self.n_features // 3)
 
-        corrupt_features = self._rng.choice(
-            self.n_features, size=n_corrupt_features, replace=False
-        )
+        corrupt_features = self._rng.choice(self.n_features, size=n_corrupt_features, replace=False)
         for col in corrupt_features:
             data[:, col] = corruption_value
         return data
@@ -354,9 +350,7 @@ class DriftGenerator:
             else:
                 # Increasing drift
                 drift_magnitude += 0.15
-                batch = self.covariate_shift(
-                    n_samples=batch_size, shift_magnitude=drift_magnitude
-                )
+                batch = self.covariate_shift(n_samples=batch_size, shift_magnitude=drift_magnitude)
             batches.append(batch)
 
         return batches

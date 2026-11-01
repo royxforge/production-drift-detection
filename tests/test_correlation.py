@@ -1,8 +1,5 @@
 """Tests for the Confidence-Drift Correlation module."""
 
-import numpy as np
-import pytest
-
 from production_drift_detection.correlation.confidence_drift import ConfidenceDriftCorrelation
 
 
@@ -106,7 +103,6 @@ class TestConfidenceDriftCorrelation:
         corr = ConfidenceDriftCorrelation(max_lag=3)
         # Simulate: confidence drops before drift increases
         # (confidence leads drift)
-        rng = np.random.default_rng(42)
         for i in range(15):
             if i < 5:
                 conf = 0.9

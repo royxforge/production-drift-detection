@@ -1,8 +1,9 @@
 """Statistical utilities for ProductionDriftDetection."""
 
+from typing import Optional, Tuple
+
 import numpy as np
 from scipy.spatial.distance import cdist
-from typing import Optional, Tuple
 
 
 def compute_entropy(probabilities: np.ndarray, axis: int = 1) -> np.ndarray:
@@ -103,9 +104,7 @@ def compute_psi_bins(
     return bin_edges, ref_props, actual_props
 
 
-def smooth_distribution(
-    probs: np.ndarray, eps: float = 1e-10
-) -> np.ndarray:
+def smooth_distribution(probs: np.ndarray, eps: float = 1e-10) -> np.ndarray:
     """Apply Laplace smoothing to a probability distribution.
 
     Parameters
@@ -183,13 +182,13 @@ def compute_rolling_statistics(
 
     result = {}
     result["rolling_mean"] = np.convolve(values, np.ones(window) / window, mode="valid")
-    result["rolling_std"] = np.array([
-        np.std(values[max(0, i - window + 1): i + 1]) for i in range(window - 1, len(values))
-    ])
-    result["rolling_min"] = np.array([
-        np.min(values[max(0, i - window + 1): i + 1]) for i in range(window - 1, len(values))
-    ])
-    result["rolling_max"] = np.array([
-        np.max(values[max(0, i - window + 1): i + 1]) for i in range(window - 1, len(values))
-    ])
+    result["rolling_std"] = np.array(
+        [np.std(values[max(0, i - window + 1) : i + 1]) for i in range(window - 1, len(values))]
+    )
+    result["rolling_min"] = np.array(
+        [np.min(values[max(0, i - window + 1) : i + 1]) for i in range(window - 1, len(values))]
+    )
+    result["rolling_max"] = np.array(
+        [np.max(values[max(0, i - window + 1) : i + 1]) for i in range(window - 1, len(values))]
+    )
     return result

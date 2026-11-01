@@ -9,7 +9,6 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 
 from production_drift_detection.detectors.base import BaseDetector
-from production_drift_detection.utils.logging import get_logger
 
 
 class DetectionMetrics:
@@ -131,10 +130,9 @@ class DetectionMetrics:
 
         cv = np.std(scores) / max(np.mean(scores), 1e-10)
 
-        rolling_std = np.array([
-            np.std(scores[max(0, i - window_size): i + 1])
-            for i in range(len(scores))
-        ])
+        rolling_std = np.array(
+            [np.std(scores[max(0, i - window_size) : i + 1]) for i in range(len(scores))]
+        )
         mean_volatility = float(np.mean(rolling_std))
 
         # np.corrcoef divides by std dev — guard against zero-variance signals
@@ -201,9 +199,8 @@ class DetectionMetrics:
             results["std_scores"].append(float(np.std(scores)))
 
         if len(magnitudes) > 1 and results["mean_scores"][-1] > results["mean_scores"][0]:
-            sensitivity = (
-                (results["mean_scores"][-1] - results["mean_scores"][0])
-                / max(magnitudes[-1] - magnitudes[0], 1e-10)
+            sensitivity = (results["mean_scores"][-1] - results["mean_scores"][0]) / max(
+                magnitudes[-1] - magnitudes[0], 1e-10
             )
         else:
             sensitivity = 0.0
@@ -249,8 +246,12 @@ class DetectionMetrics:
 
         scores_arr = np.array(all_scores)
 
-        fpr = DetectionMetrics.compute_false_positive_rate(scores_arr, detector.threshold, drift_start_batch)
-        latency = DetectionMetrics.compute_detection_latency(scores_arr, detector.threshold, drift_start_batch)
+        fpr = DetectionMetrics.compute_false_positive_rate(
+            scores_arr, detector.threshold, drift_start_batch
+        )
+        latency = DetectionMetrics.compute_detection_latency(
+            scores_arr, detector.threshold, drift_start_batch
+        )
         stability = DetectionMetrics.compute_detection_stability(scores_arr)
 
         return {

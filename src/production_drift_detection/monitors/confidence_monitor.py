@@ -4,14 +4,18 @@ The ``ConfidenceMonitor`` monitors prediction confidence trends and detects
 early degradation signals before accuracy visibly drops.
 """
 
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 
 from production_drift_detection.utils.logging import get_logger
-from production_drift_detection.utils.stats import compute_confidence, compute_entropy, compute_margin
-from production_drift_detection.utils.validation import validate_array, validate_probabilities
+from production_drift_detection.utils.stats import (
+    compute_confidence,
+    compute_entropy,
+    compute_margin,
+)
+from production_drift_detection.utils.validation import validate_probabilities
 
 
 class ConfidenceMonitor:
@@ -129,7 +133,10 @@ class ConfidenceMonitor:
             Trend analysis with direction, magnitude, and alerts.
         """
         if len(self._confidence_history) < 2:
-            return {"status": "insufficient_data", "batches_observed": len(self._confidence_history)}
+            return {
+                "status": "insufficient_data",
+                "batches_observed": len(self._confidence_history),
+            }
 
         conf = np.array(self._confidence_history)
         entropy = np.array(self._entropy_history)
@@ -140,7 +147,7 @@ class ConfidenceMonitor:
             if len(series) < 2:
                 return "stable"
             first_half = np.mean(series[: len(series) // 2])
-            second_half = np.mean(series[len(series) // 2:])
+            second_half = np.mean(series[len(series) // 2 :])
             diff = second_half - first_half
             if abs(diff) < 0.02:
                 return "stable"
@@ -184,9 +191,7 @@ class ConfidenceMonitor:
 
         # Proportion of low-confidence predictions
         low_conf_ratio = float(np.mean(confidence < self.confidence_threshold))
-        high_entropy_ratio = float(
-            np.mean(compute_entropy(probs) > self.entropy_threshold)
-        )
+        high_entropy_ratio = float(np.mean(compute_entropy(probs) > self.entropy_threshold))
 
         return {
             "low_confidence_ratio": low_conf_ratio,
@@ -221,7 +226,11 @@ class ConfidenceMonitor:
             recent_entropy = np.mean(self._entropy_history[-3:])
             baseline_entropy = np.mean(self._entropy_history[:3])
             if recent_entropy > baseline_entropy * 1.3:
-                return True, f"Entropy increased {((recent_entropy / max(baseline_entropy, 1e-10)) - 1) * 100:.1f}% from baseline"
+                increase = (recent_entropy / max(baseline_entropy, 1e-10) - 1) * 100
+                return (
+                    True,
+                    f"Entropy increased {increase:.1f}% from baseline",
+                )
 
         return False, "stable"
 
@@ -274,12 +283,20 @@ class ConfidenceMonitor:
             "degradation_reason": reason,
             "trends": trends,
             "uncertainty": uncertainty,
-            "mean_accuracy": float(np.mean(self._accuracy_history)) if self._accuracy_history else None,
+            "mean_accuracy": (
+                float(np.mean(self._accuracy_history)) if self._accuracy_history else None
+            ),
             "accuracy_trend": (
-                "decreasing" if self._accuracy_history and len(self._accuracy_history) >= 2
-                and self._accuracy_history[-1] < self._accuracy_history[0] - 0.05
-                else "stable"
-            ) if self._accuracy_history else None,
+                (
+                    "decreasing"
+                    if self._accuracy_history
+                    and len(self._accuracy_history) >= 2
+                    and self._accuracy_history[-1] < self._accuracy_history[0] - 0.05
+                    else "stable"
+                )
+                if self._accuracy_history
+                else None
+            ),
         }
 
     def reset(self) -> None:

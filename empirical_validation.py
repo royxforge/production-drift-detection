@@ -22,23 +22,22 @@ Usage:
     python empirical_validation.py
 """
 
+import json
+import math
 import sys
 import time
-import math
-import json
 from pathlib import Path
 
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from production_drift_detection.detectors.kl import KLDivergenceDetector
-from production_drift_detection.detectors.psi import PSIDetector
-from production_drift_detection.detectors.mmd import MMDDetector
-from production_drift_detection.data.synthetic_drift import DriftGenerator
 from production_drift_detection.correlation.confidence_drift import ConfidenceDriftCorrelation
+from production_drift_detection.data.synthetic_drift import DriftGenerator
+from production_drift_detection.detectors.kl import KLDivergenceDetector
+from production_drift_detection.detectors.mmd import MMDDetector
+from production_drift_detection.detectors.psi import PSIDetector
 from production_drift_detection.monitors.confidence_monitor import ConfidenceMonitor
-
 
 # ── Detectors for feature drift ──────────────────────────────────
 KL_DETECTOR = KLDivergenceDetector(threshold=0.1, is_categorical=False, n_bins=20)
@@ -101,11 +100,13 @@ def compute_cross_correlation_maxlag(conf_series, drift_series, max_lag=10):
             d_lag = drift_norm[:-lag]
             r_lag = float(np.corrcoef(c_lag, d_lag)[0, 1]) if len(c_lag) > 2 else 0.0
 
-            correlations.append({
-                "lag": lag,
-                "confidence_leads_drift": r_lead,
-                "drift_leads_confidence": r_lag,
-            })
+            correlations.append(
+                {
+                    "lag": lag,
+                    "confidence_leads_drift": r_lead,
+                    "drift_leads_confidence": r_lag,
+                }
+            )
 
     # Determine optimal lag
     if len(correlations) < 2:
@@ -229,7 +230,11 @@ def experiment_sklearn_tabular(seed: int = 42) -> dict:
         # Correlator
         correlator.add_observation(
             confidence=mean_conf,
-            drift_scores={"kl": drift_history_kl[-1], "psi": drift_history_psi[-1], "mmd": drift_history_mmd[-1]},
+            drift_scores={
+                "kl": drift_history_kl[-1],
+                "psi": drift_history_psi[-1],
+                "mmd": drift_history_mmd[-1],
+            },
             entropy=conf_update.get("mean_entropy", 0),
             margin=conf_update.get("mean_margin", 0),
         )
@@ -245,8 +250,12 @@ def experiment_sklearn_tabular(seed: int = 42) -> dict:
     xc_mmd = compute_cross_correlation_maxlag(confidence_history, drift_history_mmd, max_lag=10)
 
     # Effect sizes
-    d_kl = cohens_d(np.array(confidence_history[:drift_start]), np.array(confidence_history[drift_start:]))
-    d_drift_kl = cohens_d(np.array(drift_history_kl[:drift_start]), np.array(drift_history_kl[drift_start:]))
+    d_kl = cohens_d(
+        np.array(confidence_history[:drift_start]), np.array(confidence_history[drift_start:])
+    )
+    d_drift_kl = cohens_d(
+        np.array(drift_history_kl[:drift_start]), np.array(drift_history_kl[drift_start:])
+    )
 
     return {
         "model": "LogisticRegression",
@@ -259,7 +268,11 @@ def experiment_sklearn_tabular(seed: int = 42) -> dict:
         "conf_drop_pct": conf_drop_pct,
         "pre_drift_mean_acc": float(np.mean(accuracy_history[:drift_start])),
         "post_drift_mean_acc": float(np.mean(accuracy_history[drift_start:])),
-        "acc_drop_pct": float((np.mean(accuracy_history[:drift_start]) - np.mean(accuracy_history[drift_start:])) / max(np.mean(accuracy_history[:drift_start]), 1e-10) * 100),
+        "acc_drop_pct": float(
+            (np.mean(accuracy_history[:drift_start]) - np.mean(accuracy_history[drift_start:]))
+            / max(np.mean(accuracy_history[:drift_start]), 1e-10)
+            * 100
+        ),
         "confidence_leads_drift_kl": xc_kl["confidence_leads"],
         "confidence_leads_drift_psi": xc_psi["confidence_leads"],
         "confidence_leads_drift_mmd": xc_mmd["confidence_leads"],
@@ -272,7 +285,9 @@ def experiment_sklearn_tabular(seed: int = 42) -> dict:
         "simultaneous_corr_kl": xc_kl.get("simultaneous_correlation", 0),
         "cohens_d_confidence": float(d_kl),
         "cohens_d_drift_kl": float(d_drift_kl),
-        "early_warning_score": correlator.compute_early_warning_score().get("early_warning_score", 0),
+        "early_warning_score": correlator.compute_early_warning_score().get(
+            "early_warning_score", 0
+        ),
         "n_early_warnings": correlator.summary()["n_early_warnings"],
         "confidence_trend": float(confidence_history[-1] - confidence_history[0]),
         "drift_trend_kl": float(drift_history_kl[-1] - drift_history_kl[0]),
@@ -328,6 +343,7 @@ def experiment_pytorch_nn(seed: int = 42) -> dict:
                 nn.ReLU(),
                 nn.Linear(hidden, 2),
             )
+
         def forward(self, x):
             return self.net(x)
 
@@ -406,7 +422,11 @@ def experiment_pytorch_nn(seed: int = 42) -> dict:
 
         correlator.add_observation(
             confidence=mean_conf,
-            drift_scores={"kl": drift_history_kl[-1], "psi": drift_history_psi[-1], "mmd": drift_history_mmd[-1]},
+            drift_scores={
+                "kl": drift_history_kl[-1],
+                "psi": drift_history_psi[-1],
+                "mmd": drift_history_mmd[-1],
+            },
             entropy=conf_update.get("mean_entropy", 0),
             margin=conf_update.get("mean_margin", 0),
         )
@@ -419,7 +439,9 @@ def experiment_pytorch_nn(seed: int = 42) -> dict:
     xc_psi = compute_cross_correlation_maxlag(confidence_history, drift_history_psi, max_lag=10)
     xc_mmd = compute_cross_correlation_maxlag(confidence_history, drift_history_mmd, max_lag=10)
 
-    d_kl = cohens_d(np.array(confidence_history[:drift_start]), np.array(confidence_history[drift_start:]))
+    d_kl = cohens_d(
+        np.array(confidence_history[:drift_start]), np.array(confidence_history[drift_start:])
+    )
 
     return {
         "model": "PyTorch NN",
@@ -432,7 +454,11 @@ def experiment_pytorch_nn(seed: int = 42) -> dict:
         "conf_drop_pct": conf_drop_pct,
         "pre_drift_mean_acc": float(np.mean(accuracy_history[:drift_start])),
         "post_drift_mean_acc": float(np.mean(accuracy_history[drift_start:])),
-        "acc_drop_pct": float((np.mean(accuracy_history[:drift_start]) - np.mean(accuracy_history[drift_start:])) / max(np.mean(accuracy_history[:drift_start]), 1e-10) * 100),
+        "acc_drop_pct": float(
+            (np.mean(accuracy_history[:drift_start]) - np.mean(accuracy_history[drift_start:]))
+            / max(np.mean(accuracy_history[:drift_start]), 1e-10)
+            * 100
+        ),
         "confidence_leads_drift_kl": xc_kl["confidence_leads"],
         "confidence_leads_drift_psi": xc_psi["confidence_leads"],
         "confidence_leads_drift_mmd": xc_mmd["confidence_leads"],
@@ -444,7 +470,9 @@ def experiment_pytorch_nn(seed: int = 42) -> dict:
         "max_lead_corr_mmd": xc_mmd.get("max_lead_correlation", 0),
         "simultaneous_corr_kl": xc_kl.get("simultaneous_correlation", 0),
         "cohens_d_confidence": float(d_kl),
-        "early_warning_score": correlator.compute_early_warning_score().get("early_warning_score", 0),
+        "early_warning_score": correlator.compute_early_warning_score().get(
+            "early_warning_score", 0
+        ),
         "n_early_warnings": correlator.summary()["n_early_warnings"],
         "confidence_trend": float(confidence_history[-1] - confidence_history[0]),
         "drift_trend_kl": float(drift_history_kl[-1] - drift_history_kl[0]),
@@ -537,7 +565,11 @@ def experiment_perturbation_drift(seed: int = 42) -> dict:
 
         correlator.add_observation(
             confidence=mean_conf,
-            drift_scores={"kl": drift_history_kl[-1], "psi": drift_history_psi[-1], "mmd": drift_history_mmd[-1]},
+            drift_scores={
+                "kl": drift_history_kl[-1],
+                "psi": drift_history_psi[-1],
+                "mmd": drift_history_mmd[-1],
+            },
             entropy=conf_update.get("mean_entropy", 0),
             margin=conf_update.get("mean_margin", 0),
         )
@@ -560,7 +592,11 @@ def experiment_perturbation_drift(seed: int = 42) -> dict:
         "conf_drop_pct": conf_drop_pct,
         "pre_drift_mean_acc": float(np.mean(accuracy_history[:drift_start])),
         "post_drift_mean_acc": float(np.mean(accuracy_history[drift_start:])),
-        "acc_drop_pct": float((np.mean(accuracy_history[:drift_start]) - np.mean(accuracy_history[drift_start:])) / max(np.mean(accuracy_history[:drift_start]), 1e-10) * 100),
+        "acc_drop_pct": float(
+            (np.mean(accuracy_history[:drift_start]) - np.mean(accuracy_history[drift_start:]))
+            / max(np.mean(accuracy_history[:drift_start]), 1e-10)
+            * 100
+        ),
         "confidence_leads_drift_kl": xc_kl["confidence_leads"],
         "confidence_leads_drift_psi": xc_psi["confidence_leads"],
         "confidence_leads_drift_mmd": xc_mmd["confidence_leads"],
@@ -570,7 +606,9 @@ def experiment_perturbation_drift(seed: int = 42) -> dict:
         "max_lead_corr_kl": xc_kl.get("max_lead_correlation", 0),
         "max_lead_corr_psi": xc_psi.get("max_lead_correlation", 0),
         "max_lead_corr_mmd": xc_mmd.get("max_lead_correlation", 0),
-        "early_warning_score": correlator.compute_early_warning_score().get("early_warning_score", 0),
+        "early_warning_score": correlator.compute_early_warning_score().get(
+            "early_warning_score", 0
+        ),
         "n_early_warnings": correlator.summary()["n_early_warnings"],
         "confidence_trend": float(confidence_history[-1] - confidence_history[0]),
         "drift_trend_kl": float(drift_history_kl[-1] - drift_history_kl[0]),
@@ -595,6 +633,7 @@ def run_empirical_validation(output_path: str):
     N_SEEDS = 10
 
     lines = []
+
     def w(s=""):
         lines.append(s)
 
@@ -658,9 +697,15 @@ def run_empirical_validation(output_path: str):
         avg_conf_drop = np.mean([r["conf_drop_pct"] for r in results])
         avg_acc_drop = np.mean([r["acc_drop_pct"] for r in results])
 
-        w(f"    H1: Confidence leads drift (KL):     {leads_kl}/{total} seeds  ({leads_kl/total*100:.0f}%)")
-        w(f"    H1: Confidence leads drift (PSI):    {leads_psi}/{total} seeds  ({leads_psi/total*100:.0f}%)")
-        w(f"    H1: Confidence leads drift (MMD):    {leads_mmd}/{total} seeds  ({leads_mmd/total*100:.0f}%)")
+        w(
+            f"    H1: Confidence leads drift (KL):     {leads_kl}/{total} seeds  ({leads_kl/total*100:.0f}%)"
+        )
+        w(
+            f"    H1: Confidence leads drift (PSI):    {leads_psi}/{total} seeds  ({leads_psi/total*100:.0f}%)"
+        )
+        w(
+            f"    H1: Confidence leads drift (MMD):    {leads_mmd}/{total} seeds  ({leads_mmd/total*100:.0f}%)"
+        )
         w(f"    Avg optimal lag (KL):                {avg_lag_kl:.2f} batches")
         w(f"    Avg optimal lag (PSI):               {avg_lag_psi:.2f} batches")
         w(f"    Avg optimal lag (MMD):               {avg_lag_mmd:.2f} batches")
@@ -679,17 +724,21 @@ def run_empirical_validation(output_path: str):
     for exp_name, _ in experiments:
         results = all_results[exp_name]
         w(f"\n  ── {exp_name} (model: {results[0]['model']}) ──")
-        w(f"  {'Seed':<8} {'Conf Drop%':<12} {'Acc Drop%':<12} {'Leads(KL)':<10} "
-          f"{'Leads(PSI)':<10} {'Leads(MMD)':<10} {'Lag(KL)':<8} {'Lag(PSI)':<8} "
-          f"{'Lag(MMD)':<8} {'EWS':<6}")
+        w(
+            f"  {'Seed':<8} {'Conf Drop%':<12} {'Acc Drop%':<12} {'Leads(KL)':<10} "
+            f"{'Leads(PSI)':<10} {'Leads(MMD)':<10} {'Lag(KL)':<8} {'Lag(PSI)':<8} "
+            f"{'Lag(MMD)':<8} {'EWS':<6}"
+        )
         w("  " + "-" * 100)
         for s, r in enumerate(results):
             seed = s * 7 + 42
-            w(f"  {seed:<8} {r['conf_drop_pct']:<12.2f} {r['acc_drop_pct']:<12.2f} "
-              f"{fmt(r['confidence_leads_drift_kl']):<10} {fmt(r['confidence_leads_drift_psi']):<10} "
-              f"{fmt(r['confidence_leads_drift_mmd']):<10} {r['optimal_lag_kl']:<8} "
-              f"{r['optimal_lag_psi']:<8} {r['optimal_lag_mmd']:<8} "
-              f"{r['early_warning_score']:<6.0f}")
+            w(
+                f"  {seed:<8} {r['conf_drop_pct']:<12.2f} {r['acc_drop_pct']:<12.2f} "
+                f"{fmt(r['confidence_leads_drift_kl']):<10} {fmt(r['confidence_leads_drift_psi']):<10} "
+                f"{fmt(r['confidence_leads_drift_mmd']):<10} {r['optimal_lag_kl']:<8} "
+                f"{r['optimal_lag_psi']:<8} {r['optimal_lag_mmd']:<8} "
+                f"{r['early_warning_score']:<6.0f}"
+            )
 
     # ── SECTION 3: HYPOTHESIS CONCLUSION ──────────────────────────
     w("\n\n" + "=" * 90)
@@ -708,10 +757,14 @@ def run_empirical_validation(output_path: str):
         w(f"\n  ── {exp_name} ({results[0]['model']}) ──")
         w(f"    Model:           {results[0]['model']}")
         w(f"    Train accuracy:  {results[0]['train_acc']:.2%}")
-        w(f"    Total batches:   {results[0]['n_batches']} ({results[0]['drift_start']} clean + {results[0]['n_batches'] - results[0]['drift_start']} drifted)")
+        w(
+            f"    Total batches:   {results[0]['n_batches']} ({results[0]['drift_start']} clean + {results[0]['n_batches'] - results[0]['drift_start']} drifted)"
+        )
         w(f"    Confidence drop: {avg_conf_drop:.2f}% across drift phase")
         w(f"    H1 support:      Confidence leads drift in")
-        w(f"                     {leads_kl}/{total} trials (KL), {leads_psi}/{total} trials (PSI), {leads_mmd}/{total} trials (MMD)")
+        w(
+            f"                     {leads_kl}/{total} trials (KL), {leads_psi}/{total} trials (PSI), {leads_mmd}/{total} trials (MMD)"
+        )
         w(f"    Avg EWS:         {avg_ews:.2f}/100")
         total_leads = leads_kl + leads_psi + leads_mmd
         ratio = total_leads / (total * 3)
@@ -721,7 +774,9 @@ def run_empirical_validation(output_path: str):
             verdict = "PARTIAL SUPPORT - Confidence sometimes leads drift."
         else:
             verdict = "DOES NOT SUPPORT H1 - Confidence does not reliably lead drift."
-        w(f"    Conclusion:      {ratio:.0%} of detector-seed pairs show confidence leading drift. {verdict}")
+        w(
+            f"    Conclusion:      {ratio:.0%} of detector-seed pairs show confidence leading drift. {verdict}"
+        )
 
     # ── SECTION 4: RAW TIME SERIES (FIRST SEED) ──────────────────
     w("\n\n" + "=" * 90)
@@ -729,13 +784,17 @@ def run_empirical_validation(output_path: str):
     w("=" * 90)
 
     sample = all_results["sklearn_covariate"][0]
-    w(f"\n  {'Batch':<8} {'Magnitude':<12} {'Confidence':<12} {'Accuracy':<12} {'Drift(KL)':<12} {'Drift(PSI)':<12} {'Drift(MMD)':<12}")
+    w(
+        f"\n  {'Batch':<8} {'Magnitude':<12} {'Confidence':<12} {'Accuracy':<12} {'Drift(KL)':<12} {'Drift(PSI)':<12} {'Drift(MMD)':<12}"
+    )
     w("  " + "-" * 68)
     for i in range(len(sample["confidence_history"])):
-        w(f"  {i:<8} {sample['batch_magnitudes'][i]:<12.2f} "
-          f"{sample['confidence_history'][i]:<12.4f} {sample['accuracy_history'][i]:<12.4f} "
-          f"{sample['drift_history_kl'][i]:<12.4f} {sample['drift_history_psi'][i]:<12.4f} "
-          f"{sample['drift_history_mmd'][i]:<12.4f}")
+        w(
+            f"  {i:<8} {sample['batch_magnitudes'][i]:<12.2f} "
+            f"{sample['confidence_history'][i]:<12.4f} {sample['accuracy_history'][i]:<12.4f} "
+            f"{sample['drift_history_kl'][i]:<12.4f} {sample['drift_history_psi'][i]:<12.4f} "
+            f"{sample['drift_history_mmd'][i]:<12.4f}"
+        )
 
     # ── FOOTER ────────────────────────────────────────────────────
     elapsed = time.time() - start_time

@@ -10,13 +10,12 @@ from typing import Any, Dict, List, Optional, Union
 import numpy as np
 import pandas as pd
 
-from production_drift_detection.alerts.rules import AlertEngine, BaseRule, ThresholdRule
+from production_drift_detection.alerts.rules import AlertEngine, ThresholdRule
 from production_drift_detection.alerts.schemas import Alert, Severity
 from production_drift_detection.detectors.base import BaseDetector
 from production_drift_detection.detectors.kl import KLDivergenceDetector
 from production_drift_detection.detectors.mmd import MMDDetector
 from production_drift_detection.detectors.psi import PSIDetector
-from production_drift_detection.data.synthetic_drift import DriftGenerator
 from production_drift_detection.utils.logging import get_logger
 from production_drift_detection.utils.validation import validate_array
 
@@ -55,9 +54,7 @@ class StreamMonitor:
         self.window_size = window_size
         self.name = name or "StreamMonitor"
 
-        self._history: Dict[str, List[float]] = {
-            name: [] for name in self.detectors
-        }
+        self._history: Dict[str, List[float]] = {name: [] for name in self.detectors}
         self._batch_timestamps: List[pd.Timestamp] = []
         self._alerts: List[Alert] = []
         self._batch_count: int = 0
@@ -85,8 +82,7 @@ class StreamMonitor:
 
         self._fitted = True
         self._logger.info(
-            f"Fitted {len(self.detectors)} detectors on reference data "
-            f"with shape {data.shape}"
+            f"Fitted {len(self.detectors)} detectors on reference data " f"with shape {data.shape}"
         )
         return self
 
@@ -236,7 +232,9 @@ class StreamMonitor:
             "current_status": "healthy",
         }
 
-    def export_results(self, format: str = "json", filepath: Optional[str] = None) -> Union[str, pd.DataFrame, None]:
+    def export_results(
+        self, format: str = "json", filepath: Optional[str] = None
+    ) -> Union[str, pd.DataFrame, None]:
         """Export monitoring results to JSON, CSV, or both.
 
         Parameters
@@ -255,7 +253,11 @@ class StreamMonitor:
         for batch_idx in range(len(self._batch_timestamps)):
             row = {"batch": batch_idx + 1, "timestamp": self._batch_timestamps[batch_idx]}
             for det_name in self.detectors:
-                row[f"{det_name}_score"] = self._history[det_name][batch_idx] if batch_idx < len(self._history[det_name]) else None
+                row[f"{det_name}_score"] = (
+                    self._history[det_name][batch_idx]
+                    if batch_idx < len(self._history[det_name])
+                    else None
+                )
             data.append(row)
 
         df = pd.DataFrame(data)

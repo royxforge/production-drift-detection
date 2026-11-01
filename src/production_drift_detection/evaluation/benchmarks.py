@@ -14,8 +14,6 @@ from production_drift_detection.detectors.kl import KLDivergenceDetector
 from production_drift_detection.detectors.mmd import MMDDetector
 from production_drift_detection.detectors.psi import PSIDetector
 from production_drift_detection.evaluation.metrics import (
-    compute_detection_latency,
-    compute_false_positive_rate,
     compute_sensitivity_to_drift,
     evaluate_detector,
 )
@@ -176,15 +174,19 @@ class BenchmarkFramework:
                 drift_start_batch=data["drift_start_batch"],
             )
 
-            results.append({
-                "detector": detector.name,
-                "threshold": detector.threshold,
-                "fpr": evaluation["false_positive_rate"]["false_positive_rate"],
-                "detection_latency": evaluation["detection_latency"].get("detection_latency_batches", None),
-                "drift_detected": evaluation["detection_latency"].get("drift_detected", False),
-                "stability": evaluation["stability"]["stability"],
-                "detection_rate": evaluation["detection_latency"].get("detection_rate", 0),
-            })
+            results.append(
+                {
+                    "detector": detector.name,
+                    "threshold": detector.threshold,
+                    "fpr": evaluation["false_positive_rate"]["false_positive_rate"],
+                    "detection_latency": evaluation["detection_latency"].get(
+                        "detection_latency_batches", None
+                    ),
+                    "drift_detected": evaluation["detection_latency"].get("drift_detected", False),
+                    "stability": evaluation["stability"]["stability"],
+                    "detection_rate": evaluation["detection_latency"].get("detection_rate", 0),
+                }
+            )
 
         results_df = pd.DataFrame(results)
         self._results = results_df.to_dict(orient="records")
@@ -220,12 +222,14 @@ class BenchmarkFramework:
             )
 
             for i, mag in enumerate(magnitudes):
-                all_results.append({
-                    "detector": detector.name,
-                    "magnitude": mag,
-                    "mean_score": sensitivity["mean_scores"][i],
-                    "std_score": sensitivity["std_scores"][i],
-                })
+                all_results.append(
+                    {
+                        "detector": detector.name,
+                        "magnitude": mag,
+                        "mean_score": sensitivity["mean_scores"][i],
+                        "std_score": sensitivity["std_scores"][i],
+                    }
+                )
 
         return pd.DataFrame(all_results)
 
@@ -247,7 +251,8 @@ class BenchmarkFramework:
                 "KL Divergence",
             ],
             "differences": [
-                "ProductionDriftDetection focuses on streaming detection; Evidently processes static datasets",
+                "ProductionDriftDetection focuses on streaming detection; "
+                "Evidently processes static datasets",
                 "ProductionDriftDetection provides confidence-drift correlation",
             ],
             "integration_note": (

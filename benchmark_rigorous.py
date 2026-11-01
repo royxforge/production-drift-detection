@@ -13,10 +13,10 @@ Addresses methodological gaps identified in the initial benchmark:
   ✓ Detection delay measured from batch where drift exceeds 2× baseline noise
 """
 
+import inspect
+import math
 import sys
 import time
-import math
-import inspect
 from pathlib import Path
 
 import numpy as np
@@ -24,24 +24,23 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from production_drift_detection.detectors.kl import KLDivergenceDetector
-from production_drift_detection.detectors.psi import PSIDetector
-from production_drift_detection.detectors.mmd import MMDDetector
-from production_drift_detection.detectors.adwin import ADWINDetector
 from production_drift_detection.data.synthetic_drift import DriftGenerator
+from production_drift_detection.detectors.adwin import ADWINDetector
+from production_drift_detection.detectors.kl import KLDivergenceDetector
+from production_drift_detection.detectors.mmd import MMDDetector
+from production_drift_detection.detectors.psi import PSIDetector
 from production_drift_detection.evaluation.metrics import (
     compute_detection_latency,
-    compute_false_positive_rate,
     compute_detection_stability,
+    compute_false_positive_rate,
 )
-
 
 # ── Detector definitions ──────────────────────────────────────────
 DETECTORS = [
     ("KLDivergence", KLDivergenceDetector(threshold=0.1, is_categorical=False, n_bins=20)),
-    ("PSI",           PSIDetector(threshold=0.1, n_bins=10)),
-    ("MMD",           MMDDetector(threshold=0.05, subsample=200)),
-    ("ADWIN",         ADWINDetector(threshold=0.1, delta=0.05)),
+    ("PSI", PSIDetector(threshold=0.1, n_bins=10)),
+    ("MMD", MMDDetector(threshold=0.05, subsample=200)),
+    ("ADWIN", ADWINDetector(threshold=0.1, delta=0.05)),
 ]
 
 
@@ -51,7 +50,7 @@ def _copy_detector(detector):
     sig = inspect.signature(cls.__init__)
     kwargs = {}
     for pname in sig.parameters:
-        if pname == 'self':
+        if pname == "self":
             continue
         if hasattr(detector, pname):
             kwargs[pname] = getattr(detector, pname)
@@ -88,7 +87,14 @@ def compute_roc_auc(scores, labels):
     n_neg = np.sum(labels == 0)
 
     if n_pos == 0 or n_neg == 0:
-        return {"auc": 0.5, "tpr": [], "fpr": [], "thresholds": [], "n_pos": int(n_pos), "n_neg": int(n_neg)}
+        return {
+            "auc": 0.5,
+            "tpr": [],
+            "fpr": [],
+            "thresholds": [],
+            "n_pos": int(n_pos),
+            "n_neg": int(n_neg),
+        }
 
     tpr_list = [0.0]
     fpr_list = [0.0]
@@ -111,7 +117,7 @@ def compute_roc_auc(scores, labels):
     # AUC via trapezoidal rule (handles numpy >= 2.0 where np.trapz was removed)
     auc = 0.0
     for i in range(1, len(fpr_list)):
-        auc += (tpr_list[i-1] + tpr_list[i]) * (fpr_list[i] - fpr_list[i-1]) / 2.0
+        auc += (tpr_list[i - 1] + tpr_list[i]) * (fpr_list[i] - fpr_list[i - 1]) / 2.0
     return {"auc": auc, "tpr": tpr_list, "fpr": fpr_list, "n_pos": int(n_pos), "n_neg": int(n_neg)}
 
 
@@ -214,7 +220,7 @@ def run_single_seed(seed: int) -> dict:
         # Cohen's d: effect size between pre-drift and fully-drifted
         d = cohens_d(scores_arr[:N_CLEAN], scores_arr[fpr_window:])
         # Also compare pre-drift vs strong drift (last 35 batches)
-        d_strong = cohens_d(scores_arr[:N_CLEAN], scores_arr[fpr_window + 15:])
+        d_strong = cohens_d(scores_arr[:N_CLEAN], scores_arr[fpr_window + 15 :])
 
         # ── Perturbation drift evaluation ──
         det_pert = _copy_detector(detector)
@@ -267,6 +273,7 @@ def run_rigorous_benchmark(output_path: str):
     N_SEEDS = 20
 
     lines = []
+
     def w(s=""):
         lines.append(s)
 
@@ -313,17 +320,17 @@ def run_rigorous_benchmark(output_path: str):
         return m, ci, s
 
     metrics_desc = [
-        ("fpr",              "FPR (clean phase)",                 "%",    True),
-        ("latency",          "Latency (batches after drift)",     "",     False),
-        ("detection_rate",   "Detection rate (drift phase)",      "%",    True),
-        ("auc",              "ROC AUC",                           "",     False),
-        ("cohens_d",         "Cohen's d (pre vs all drift)",      "",     False),
-        ("cohens_d_strong",  "Cohen's d (pre vs strong drift)",   "",     False),
-        ("stability",        "Stability",                         "",     False),
-        ("pert_fpr",         "Perturbation FPR",                  "%",    True),
-        ("pert_detection_rate", "Perturbation det. rate",         "%",    True),
-        ("pert_auc",         "Perturbation AUC",                  "",     False),
-        ("pert_cohens_d",    "Perturbation Cohen's d",            "",     False),
+        ("fpr", "FPR (clean phase)", "%", True),
+        ("latency", "Latency (batches after drift)", "", False),
+        ("detection_rate", "Detection rate (drift phase)", "%", True),
+        ("auc", "ROC AUC", "", False),
+        ("cohens_d", "Cohen's d (pre vs all drift)", "", False),
+        ("cohens_d_strong", "Cohen's d (pre vs strong drift)", "", False),
+        ("stability", "Stability", "", False),
+        ("pert_fpr", "Perturbation FPR", "%", True),
+        ("pert_detection_rate", "Perturbation det. rate", "%", True),
+        ("pert_auc", "Perturbation AUC", "", False),
+        ("pert_cohens_d", "Perturbation Cohen's d", "", False),
     ]
 
     # Print header
@@ -335,9 +342,12 @@ def run_rigorous_benchmark(output_path: str):
 
     for key, label, unit, is_pct in metrics_desc:
         if is_pct:
+
             def fmt_pct(m, ci, s):
                 return f"{m*100:.1f}% ± {ci*100:.1f}%".ljust(24)
+
         else:
+
             def fmt_pct(m, ci, s):
                 return f"{m:.4f} ± {ci:.4f}".ljust(24)
 
@@ -359,21 +369,29 @@ def run_rigorous_benchmark(output_path: str):
     w("  SECTION 2: LATENCY ANALYSIS")
     w("=" * 90)
 
-    w(f"\n  {'Detector':<16} {'Median latency':<18} {'Mean latency':<18} "
-      f"{'Min':<10} {'Max':<10} {'% Detected (any)':<18} {'% Detected (batch 15+)':<24}")
+    w(
+        f"\n  {'Detector':<16} {'Median latency':<18} {'Mean latency':<18} "
+        f"{'Min':<10} {'Max':<10} {'% Detected (any)':<18} {'% Detected (batch 15+)':<24}"
+    )
     w("  " + "-" * 96)
     for name, _ in DETECTORS:
         latencies = [r["latency"] for r in all_results[name] if r["latency"] is not None]
         detected_any = sum(1 for r in all_results[name] if r["detected"])
-        detected_strong = sum(1 for r in all_results[name] if r["latency"] is not None and r["latency"] < 35)
+        detected_strong = sum(
+            1 for r in all_results[name] if r["latency"] is not None and r["latency"] < 35
+        )
         pct_any = detected_any / len(all_results[name]) * 100
         pct_strong = detected_strong / len(all_results[name]) * 100
         if len(latencies) > 0:
-            w(f"  {name:<16} {np.median(latencies):<18.1f} {np.mean(latencies):<18.2f} "
-              f"{min(latencies):<10} {max(latencies):<10} {pct_any:<18.1f} {pct_strong:<24.1f}")
+            w(
+                f"  {name:<16} {np.median(latencies):<18.1f} {np.mean(latencies):<18.2f} "
+                f"{min(latencies):<10} {max(latencies):<10} {pct_any:<18.1f} {pct_strong:<24.1f}"
+            )
         else:
-            w(f"  {name:<16} {'N/A':<18} {'N/A':<18} "
-              f"{'N/A':<10} {'N/A':<10} {pct_any:<18.1f} {pct_strong:<24.1f}")
+            w(
+                f"  {name:<16} {'N/A':<18} {'N/A':<18} "
+                f"{'N/A':<10} {'N/A':<10} {pct_any:<18.1f} {pct_strong:<24.1f}"
+            )
 
     # ── SECTION 3: THRESHOLD SWEEP / ROC SUMMARY ─────────────────
     w("\n\n" + "=" * 90)
@@ -384,8 +402,10 @@ def run_rigorous_benchmark(output_path: str):
 
     cohens_d_covar = "Cohen's d (covar)"
     cohens_d_pert = "Cohen's d (pert)"
-    w(f"  {'Detector':<16} {'AUC (covariate)':<20} {'AUC (perturbation)':<22} "
-      f"{cohens_d_covar:<20} {cohens_d_pert:<20}")
+    w(
+        f"  {'Detector':<16} {'AUC (covariate)':<20} {'AUC (perturbation)':<22} "
+        f"{cohens_d_covar:<20} {cohens_d_pert:<20}"
+    )
     w("  " + "-" * 98)
     for name, _ in DETECTORS:
         aucs = [r["auc"] for r in all_results[name]]
@@ -396,10 +416,12 @@ def run_rigorous_benchmark(output_path: str):
         m_pauc, ci_pauc, _ = mean_ci(p_aucs)
         m_d, ci_d, _ = mean_ci(ds)
         m_pd, ci_pd, _ = mean_ci(pds)
-        w(f"  {name:<16} {m_auc:.4f} ± {ci_auc:.4f}      "
-          f"{m_pauc:.4f} ± {ci_pauc:.4f}        "
-          f"{m_d:.4f} ± {ci_d:.4f}      "
-          f"{m_pd:.4f} ± {ci_pd:.4f}")
+        w(
+            f"  {name:<16} {m_auc:.4f} ± {ci_auc:.4f}      "
+            f"{m_pauc:.4f} ± {ci_pauc:.4f}        "
+            f"{m_d:.4f} ± {ci_d:.4f}      "
+            f"{m_pd:.4f} ± {ci_pd:.4f}"
+        )
 
     # ── SECTION 4: OPTIMAL THRESHOLD SEARCH ──────────────────────
     w("\n\n" + "=" * 90)
@@ -501,7 +523,11 @@ def run_rigorous_benchmark(output_path: str):
         rank = {}
         vals = [r for r in all_results[name]]
         rank["FPR (lower is better)"] = 1.0 - np.mean([r["fpr"] for r in vals])
-        rank["Latency (lower is better)"] = 1.0 - min(1.0, np.mean([r["latency"] for r in vals if r["latency"] is not None]) / 50.0) if any(r["latency"] is not None for r in vals) else 0
+        rank["Latency (lower is better)"] = (
+            1.0 - min(1.0, np.mean([r["latency"] for r in vals if r["latency"] is not None]) / 50.0)
+            if any(r["latency"] is not None for r in vals)
+            else 0
+        )
         rank["Detection rate"] = np.mean([r["detection_rate"] for r in vals])
         rank["AUC"] = np.mean([r["auc"] for r in vals])
         rank["Effect size"] = min(1.0, np.mean([r["cohens_d_strong"] for r in vals]) / 5.0)
@@ -512,18 +538,22 @@ def run_rigorous_benchmark(output_path: str):
 
     sorted_rankings = sorted(rankings.items(), key=lambda x: x[1]["Composite"], reverse=True)
 
-    w(f"\n  {'Rank':<6} {'Detector':<16} {'Composite':<12} {'FPR':<10} {'Latency':<10} "
-      f"{'Det Rate':<10} {'AUC':<10} {'Effect':<10} {'Stability':<12} {'Pert AUC':<10}")
+    w(
+        f"\n  {'Rank':<6} {'Detector':<16} {'Composite':<12} {'FPR':<10} {'Latency':<10} "
+        f"{'Det Rate':<10} {'AUC':<10} {'Effect':<10} {'Stability':<12} {'Pert AUC':<10}"
+    )
     w("  " + "-" * 106)
     for rank_idx, (name, rank) in enumerate(sorted_rankings, 1):
-        w(f"  #{rank_idx:<4} {name:<16} {rank['Composite']:<12.4f} "
-          f"{1-rank['FPR (lower is better)']:<10.2%} "
-          f"{rank['Latency (lower is better)']:<10.4f} "
-          f"{rank['Detection rate']:<10.2%} "
-          f"{rank['AUC']:<10.4f} "
-          f"{rank['Effect size']:<10.4f} "
-          f"{rank['Stability']:<12.4f} "
-          f"{rank['Perturbation AUC']:<10.4f}")
+        w(
+            f"  #{rank_idx:<4} {name:<16} {rank['Composite']:<12.4f} "
+            f"{1-rank['FPR (lower is better)']:<10.2%} "
+            f"{rank['Latency (lower is better)']:<10.4f} "
+            f"{rank['Detection rate']:<10.2%} "
+            f"{rank['AUC']:<10.4f} "
+            f"{rank['Effect size']:<10.4f} "
+            f"{rank['Stability']:<12.4f} "
+            f"{rank['Perturbation AUC']:<10.4f}"
+        )
 
     # ── SECTION 6: RAW DATA DUMP (JSON) ──────────────────────────
     w("\n\n" + "=" * 90)
@@ -531,16 +561,20 @@ def run_rigorous_benchmark(output_path: str):
     w("=" * 90)
     for name, _ in DETECTORS:
         w(f"\n  ── {name} ──")
-        w(f"  {'Seed':<8} {'FPR':<10} {'Lat':<8} {'Det%':<8} {'AUC':<8} "
-          f"{'d':<8} {'d(str)':<8} {'pFPR':<10} {'pDet%':<8} {'pAUC':<8}")
+        w(
+            f"  {'Seed':<8} {'FPR':<10} {'Lat':<8} {'Det%':<8} {'AUC':<8} "
+            f"{'d':<8} {'d(str)':<8} {'pFPR':<10} {'pDet%':<8} {'pAUC':<8}"
+        )
         for idx, r in enumerate(all_results[name]):
             seed = idx * 7 + 42
             lat = fmt(r["latency"], 1) if r["latency"] is not None else "N/A"
-            w(f"  {seed:<8} {r['fpr']:<10.2%} {lat:<8} "
-              f"{r['detection_rate']:<8.2%} {r['auc']:<8.4f} "
-              f"{r['cohens_d']:<8.2f} {r['cohens_d_strong']:<8.2f} "
-              f"{r['pert_fpr']:<10.2%} {r['pert_detection_rate']:<8.2%} "
-              f"{r['pert_auc']:<8.4f}")
+            w(
+                f"  {seed:<8} {r['fpr']:<10.2%} {lat:<8} "
+                f"{r['detection_rate']:<8.2%} {r['auc']:<8.4f} "
+                f"{r['cohens_d']:<8.2f} {r['cohens_d_strong']:<8.2f} "
+                f"{r['pert_fpr']:<10.2%} {r['pert_detection_rate']:<8.2%} "
+                f"{r['pert_auc']:<8.4f}"
+            )
 
     # ── Footer ────────────────────────────────────────────────────
     elapsed = time.time() - start_time

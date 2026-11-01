@@ -1,7 +1,5 @@
 """Tests for the alerting system."""
 
-import pytest
-
 from production_drift_detection.alerts.rules import AlertEngine, RollingWindowRule, ThresholdRule
 from production_drift_detection.alerts.schemas import Alert, Severity
 

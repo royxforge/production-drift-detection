@@ -93,9 +93,7 @@ def test_invalid_reference_fraction_returns_usage_error(tmp_path):
     csv = tmp_path / "drifted.csv"
     _write_csv(csv)
 
-    code = main(
-        ["detect", "-i", str(csv), "-c", "score", "--reference-fraction", "1.5"]
-    )
+    code = main(["detect", "-i", str(csv), "-c", "score", "--reference-fraction", "1.5"])
     assert code == 2
 
 
@@ -105,9 +103,7 @@ def test_every_detector_runs(tmp_path, detector):
     report = tmp_path / f"{detector}.json"
     _write_csv(csv, shift=3.0)
 
-    code = main(
-        ["detect", "-i", str(csv), "-c", "score", "-d", detector, "-o", str(report)]
-    )
+    code = main(["detect", "-i", str(csv), "-c", "score", "-d", detector, "-o", str(report)])
     assert code == 0
     assert report.exists()
 

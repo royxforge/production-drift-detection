@@ -15,7 +15,8 @@ Or from Python:
 import warnings
 
 warnings.warn(
-    "Streamlit dashboard is deprecated. Use `production_drift_detection.dashboard.server` instead.\n"
+    "Streamlit dashboard is deprecated. Use "
+    "`production_drift_detection.dashboard.server` instead.\n"
     "Run: python -m production_drift_detection.dashboard.server",
     DeprecationWarning,
     stacklevel=2,

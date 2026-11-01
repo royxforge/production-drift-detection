@@ -161,7 +161,9 @@ class BaseDetector(ABC):
             "mean_score": float(np.mean(self._scores)) if self._scores else None,
             "max_score": float(np.max(self._scores)) if self._scores else None,
             "current_status": self._classify_severity(
-                float(np.mean(self._scores[-5:])) if len(self._scores) >= 5 else (self._scores[-1] if self._scores else 0)
+                float(np.mean(self._scores[-5:]))
+                if len(self._scores) >= 5
+                else (self._scores[-1] if self._scores else 0)
             ),
         }
 

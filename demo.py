@@ -141,7 +141,8 @@ def run_demo(quick: bool = False) -> dict:
             noise = rng.normal(0, 0.05, batch_size)
             probs = np.clip(
                 np.column_stack([1 - (base_conf + noise), base_conf + noise]),
-                0, 1,
+                0,
+                1,
             )
             probs = probs / probs.sum(axis=1, keepdims=True)
         else:
@@ -162,10 +163,16 @@ def run_demo(quick: bool = False) -> dict:
         all_results.append(result)
 
         # Print batch summary
-        status_icon = "[OK]" if result["status"] == "healthy" else "[--]" if result["status"] == "watch" else "[!!]" if result["status"] == "warning" else "[##]"
-        scores_str = " | ".join(
-            f"{k}: {v:.4f}" for k, v in result["scores"].items()
+        status_icon = (
+            "[OK]"
+            if result["status"] == "healthy"
+            else (
+                "[--]"
+                if result["status"] == "watch"
+                else "[!!]" if result["status"] == "warning" else "[##]"
+            )
         )
+        scores_str = " | ".join(f"{k}: {v:.4f}" for k, v in result["scores"].items())
         conf_str = f"Conf: {conf_update.get('mean_confidence', 0):.3f}"
         print(f"  Batch {batch_idx + 1:2d}: {status_icon} {scores_str} | {conf_str}")
 
@@ -230,9 +237,11 @@ def run_demo(quick: bool = False) -> dict:
                     drifted_batches=drift_data,
                     drift_start_batch=len(clean_data),
                 )
-                print(f"  {det_name.upper()}: "
-                      f"FPR={eval_result['false_positive_rate']['false_positive_rate']:.2%}, "
-                      f"Stability={eval_result['stability']['stability']:.3f}")
+                print(
+                    f"  {det_name.upper()}: "
+                    f"FPR={eval_result['false_positive_rate']['false_positive_rate']:.2%}, "
+                    f"Stability={eval_result['stability']['stability']:.3f}"
+                )
             except Exception as e:
                 print(f"  {det_name.upper()}: Evaluation skipped ({e})")
 
@@ -260,6 +269,7 @@ def launch_dashboard():
     print("Press Ctrl+C to stop.")
     print()
     from production_drift_detection.dashboard.server import serve
+
     serve()
 
 
@@ -268,17 +278,20 @@ def main():
         description="ProductionDriftDetection — Real-time Data Drift Detection Demo"
     )
     parser.add_argument(
-        "--dashboard", "-d",
+        "--dashboard",
+        "-d",
         action="store_true",
         help="Launch Streamlit dashboard after monitoring",
     )
     parser.add_argument(
-        "--quick", "-q",
+        "--quick",
+        "-q",
         action="store_true",
         help="Run a quick 15-batch demo",
     )
     parser.add_argument(
-        "--export", "-e",
+        "--export",
+        "-e",
         type=str,
         default=None,
         help="Export results summary to file (JSON)",

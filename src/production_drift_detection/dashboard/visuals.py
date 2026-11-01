@@ -6,8 +6,6 @@ Uses Plotly for interactive chart generation.
 from typing import Any, Dict, List, Optional
 
 import numpy as np
-import pandas as pd
-import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
@@ -58,15 +56,20 @@ class Visualizer:
 
         for det_name, scores in history.items():
             color = colors.get(det_name, None)
-            fig.add_trace(go.Scatter(
-                x=batch_labels[:len(scores)],
-                y=scores,
-                mode="lines+markers",
-                name=det_name.upper(),
-                line=dict(color=color, width=2),
-                marker=dict(size=6, color=color),
-                hovertemplate=f"<b>{det_name.upper()}</b><br>Batch: %{{x}}<br>Score: %{{y:.4f}}<extra></extra>",
-            ))
+            fig.add_trace(
+                go.Scatter(
+                    x=batch_labels[: len(scores)],
+                    y=scores,
+                    mode="lines+markers",
+                    name=det_name.upper(),
+                    line=dict(color=color, width=2),
+                    marker=dict(size=6, color=color),
+                    hovertemplate=(
+                        f"<b>{det_name.upper()}</b><br>Batch: %{{x}}<br>"
+                        "Score: %{{y:.4f}}<extra></extra>"
+                    ),
+                )
+            )
 
         fig.update_layout(
             title=dict(text=title, x=0.5),
@@ -108,16 +111,18 @@ class Visualizer:
 
         z_data = np.array(data).T
 
-        fig = go.Figure(data=go.Heatmap(
-            z=z_data,
-            x=list(range(1, len(feature_scores) + 1)),
-            y=feature_names,
-            colorscale="RdBu_r",
-            zmin=0,
-            zmid=None,
-            colorbar=dict(title="PSI Score"),
-            hovertemplate="Feature: %{y}<br>Batch: %{x}<br>PSI: %{z:.4f}<extra></extra>",
-        ))
+        fig = go.Figure(
+            data=go.Heatmap(
+                z=z_data,
+                x=list(range(1, len(feature_scores) + 1)),
+                y=feature_names,
+                colorscale="RdBu_r",
+                zmin=0,
+                zmid=None,
+                colorbar=dict(title="PSI Score"),
+                hovertemplate="Feature: %{y}<br>Batch: %{x}<br>PSI: %{z:.4f}<extra></extra>",
+            )
+        )
 
         fig.update_layout(
             title=dict(text="Per-Feature Drift (PSI)", x=0.5),
@@ -147,7 +152,8 @@ class Visualizer:
             Multi-trace confidence figure.
         """
         fig = make_subplots(
-            rows=3, cols=1,
+            rows=3,
+            cols=1,
             shared_xaxes=True,
             subplot_titles=("Confidence", "Entropy", "Margin"),
             vertical_spacing=0.08,
@@ -155,32 +161,44 @@ class Visualizer:
 
         batches = list(range(1, len(confidence_monitor._confidence_history) + 1))
 
-        fig.add_trace(go.Scatter(
-            x=batches,
-            y=confidence_monitor._confidence_history,
-            mode="lines+markers",
-            name="Confidence",
-            line=dict(color="#2ECC71", width=2),
-            marker=dict(size=6),
-        ), row=1, col=1)
+        fig.add_trace(
+            go.Scatter(
+                x=batches,
+                y=confidence_monitor._confidence_history,
+                mode="lines+markers",
+                name="Confidence",
+                line=dict(color="#2ECC71", width=2),
+                marker=dict(size=6),
+            ),
+            row=1,
+            col=1,
+        )
 
-        fig.add_trace(go.Scatter(
-            x=batches,
-            y=confidence_monitor._entropy_history,
-            mode="lines+markers",
-            name="Entropy",
-            line=dict(color="#E74C3C", width=2),
-            marker=dict(size=6),
-        ), row=2, col=1)
+        fig.add_trace(
+            go.Scatter(
+                x=batches,
+                y=confidence_monitor._entropy_history,
+                mode="lines+markers",
+                name="Entropy",
+                line=dict(color="#E74C3C", width=2),
+                marker=dict(size=6),
+            ),
+            row=2,
+            col=1,
+        )
 
-        fig.add_trace(go.Scatter(
-            x=batches,
-            y=confidence_monitor._margin_history,
-            mode="lines+markers",
-            name="Margin",
-            line=dict(color="#3498DB", width=2),
-            marker=dict(size=6),
-        ), row=3, col=1)
+        fig.add_trace(
+            go.Scatter(
+                x=batches,
+                y=confidence_monitor._margin_history,
+                mode="lines+markers",
+                name="Margin",
+                line=dict(color="#3498DB", width=2),
+                marker=dict(size=6),
+            ),
+            row=3,
+            col=1,
+        )
 
         fig.update_layout(
             title=dict(text="Confidence Monitoring History", x=0.5),
@@ -219,7 +237,8 @@ class Visualizer:
             return go.Figure()
 
         fig = make_subplots(
-            rows=2, cols=2,
+            rows=2,
+            cols=2,
             subplot_titles=(
                 "Confidence vs Drift Over Time",
                 "Cross-Correlation (Lead-Lag)",
@@ -234,28 +253,36 @@ class Visualizer:
         batches = list(range(1, viz_data["n_observations"] + 1))
 
         # Top-left: Confidence vs Drift
-        fig.add_trace(go.Scatter(
-            x=batches,
-            y=viz_data["confidence_history"],
-            mode="lines+markers",
-            name="Confidence",
-            line=dict(color="#2ECC71", width=2),
-            marker=dict(size=6),
-        ), row=1, col=1)
+        fig.add_trace(
+            go.Scatter(
+                x=batches,
+                y=viz_data["confidence_history"],
+                mode="lines+markers",
+                name="Confidence",
+                line=dict(color="#2ECC71", width=2),
+                marker=dict(size=6),
+            ),
+            row=1,
+            col=1,
+        )
 
         # Add first drift detector traces
         if viz_data["drift_history"]:
             det_name = list(viz_data["drift_history"].keys())[0]
             drift_vals = viz_data["drift_history"][det_name]
-            fig.add_trace(go.Scatter(
-                x=batches[:len(drift_vals)],
-                y=drift_vals,
-                mode="lines+markers",
-                name=f"{det_name.upper()} Drift",
-                yaxis="y2",
-                line=dict(color="#E74C3C", width=2),
-                marker=dict(size=6),
-            ), row=1, col=1)
+            fig.add_trace(
+                go.Scatter(
+                    x=batches[: len(drift_vals)],
+                    y=drift_vals,
+                    mode="lines+markers",
+                    name=f"{det_name.upper()} Drift",
+                    yaxis="y2",
+                    line=dict(color="#E74C3C", width=2),
+                    marker=dict(size=6),
+                ),
+                row=1,
+                col=1,
+            )
 
             # Update y-axis to dual-axis
             fig.update_layout(
@@ -274,36 +301,48 @@ class Visualizer:
                 lags = [c["lag"] for c in cc["lead_lag_analysis"]]
                 lead_corrs = [c.get("confidence_leads_drift", 0) for c in cc["lead_lag_analysis"]]
 
-                fig.add_trace(go.Bar(
-                    x=lags,
-                    y=lead_corrs,
-                    name=f"{det_name.upper()} Lead",
-                    marker_color="#3498DB",
-                    hovertemplate="Lag: %{x}<br>Correlation: %{y:.4f}<extra></extra>",
-                ), row=1, col=2)
+                fig.add_trace(
+                    go.Bar(
+                        x=lags,
+                        y=lead_corrs,
+                        name=f"{det_name.upper()} Lead",
+                        marker_color="#3498DB",
+                        hovertemplate="Lag: %{x}<br>Correlation: %{y:.4f}<extra></extra>",
+                    ),
+                    row=1,
+                    col=2,
+                )
 
         # Bottom-left: Confidence trend with regression
         conf = np.array(viz_data["confidence_history"])
-        fig.add_trace(go.Scatter(
-            x=batches,
-            y=conf,
-            mode="lines+markers",
-            name="Confidence",
-            line=dict(color="#2ECC71", width=2),
-            marker=dict(size=6),
-        ), row=2, col=1)
+        fig.add_trace(
+            go.Scatter(
+                x=batches,
+                y=conf,
+                mode="lines+markers",
+                name="Confidence",
+                line=dict(color="#2ECC71", width=2),
+                marker=dict(size=6),
+            ),
+            row=2,
+            col=1,
+        )
 
         # Add trend line
         if len(conf) > 1:
             z = np.polyfit(batches, conf, 1)
             p = np.poly1d(z)
-            fig.add_trace(go.Scatter(
-                x=batches,
-                y=p(batches),
-                mode="lines",
-                name="Trend",
-                line=dict(color="#E74C3C", width=2, dash="dash"),
-            ), row=2, col=1)
+            fig.add_trace(
+                go.Scatter(
+                    x=batches,
+                    y=p(batches),
+                    mode="lines",
+                    name="Trend",
+                    line=dict(color="#E74C3C", width=2, dash="dash"),
+                ),
+                row=2,
+                col=1,
+            )
 
         # Bottom-right: Early warnings
         warnings = viz_data.get("early_warnings", [])
@@ -323,18 +362,22 @@ class Visualizer:
                     warning_batches.append(idx + 1)
                     warning_scores.append(w.get("confidence_drop_pct", 0))
 
-            fig.add_trace(go.Scatter(
-                x=warning_batches,
-                y=warning_scores,
-                mode="markers",
-                name="Early Warnings",
-                marker=dict(
-                    color="#E74C3C",
-                    size=12,
-                    symbol="triangle-down",
+            fig.add_trace(
+                go.Scatter(
+                    x=warning_batches,
+                    y=warning_scores,
+                    mode="markers",
+                    name="Early Warnings",
+                    marker=dict(
+                        color="#E74C3C",
+                        size=12,
+                        symbol="triangle-down",
+                    ),
+                    hovertemplate="Batch: %{x}<br>Drop: %{y:.1f}%<extra></extra>",
                 ),
-                hovertemplate="Batch: %{x}<br>Drop: %{y:.1f}%<extra></extra>",
-            ), row=2, col=2)
+                row=2,
+                col=2,
+            )
 
         fig.update_layout(
             title=dict(text="Confidence-Drift Correlation Analysis", x=0.5),
@@ -381,13 +424,15 @@ class Visualizer:
             else:
                 colors.append("rgba(231, 76, 60, 0.3)")  # Red = drift
 
-        fig.add_trace(go.Bar(
-            x=batches,
-            y=scores,
-            marker_color=colors,
-            name="Score",
-            hovertemplate="Batch: %{x}<br>Score: %{y:.4f}<extra></extra>",
-        ))
+        fig.add_trace(
+            go.Bar(
+                x=batches,
+                y=scores,
+                marker_color=colors,
+                name="Score",
+                hovertemplate="Batch: %{x}<br>Score: %{y:.4f}<extra></extra>",
+            )
+        )
 
         # Threshold line
         fig.add_hline(
@@ -454,23 +499,30 @@ class Visualizer:
 
         # Status indicators
         for i, (name, status, score, color) in enumerate(zip(names, statuses, mean_scores, colors)):
-            fig.add_trace(go.Indicator(
-                mode="gauge+number+delta",
-                value=score,
-                number=dict(suffix="", font=dict(color=color)),
-                title=dict(text=f"{name.upper()}<br><span style='font-size:0.8em;color:{color}'>({status})</span>"),
-                gauge=dict(
-                    axis=dict(range=[0, max(score * 3, 1)]),
-                    bar=dict(color=color),
-                    steps=[
-                        dict(range=[0, 0.5], color="rgba(46, 204, 113, 0.2)"),
-                        dict(range=[0.5, 1.0], color="rgba(241, 196, 15, 0.2)"),
-                        dict(range=[1.0, 2.0], color="rgba(230, 126, 34, 0.2)"),
-                        dict(range=[2.0, 10], color="rgba(231, 76, 60, 0.2)"),
-                    ],
-                ),
-                domain=dict(row=0, column=i),
-            ))
+            fig.add_trace(
+                go.Indicator(
+                    mode="gauge+number+delta",
+                    value=score,
+                    number=dict(suffix="", font=dict(color=color)),
+                    title=dict(
+                        text=(
+                            f"{name.upper()}<br>"
+                            f"<span style='font-size:0.8em;color:{color}'>({status})</span>"
+                        )
+                    ),
+                    gauge=dict(
+                        axis=dict(range=[0, max(score * 3, 1)]),
+                        bar=dict(color=color),
+                        steps=[
+                            dict(range=[0, 0.5], color="rgba(46, 204, 113, 0.2)"),
+                            dict(range=[0.5, 1.0], color="rgba(241, 196, 15, 0.2)"),
+                            dict(range=[1.0, 2.0], color="rgba(230, 126, 34, 0.2)"),
+                            dict(range=[2.0, 10], color="rgba(231, 76, 60, 0.2)"),
+                        ],
+                    ),
+                    domain=dict(row=0, column=i),
+                )
+            )
 
         fig.update_layout(
             grid=dict(rows=1, columns=len(names)),

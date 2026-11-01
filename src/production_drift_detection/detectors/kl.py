@@ -51,9 +51,7 @@ class KLDivergenceDetector(BaseDetector):
         if self.is_categorical:
             # For categorical data, compute PMF from unique values
             values, counts = np.unique(data, return_counts=True)
-            self._reference_pmf = smooth_distribution(
-                counts.astype(float), eps=self.smoothing
-            )
+            self._reference_pmf = smooth_distribution(counts.astype(float), eps=self.smoothing)
             self._ref_categories = values
         else:
             # For continuous data, bin and compute histogram
@@ -61,21 +59,15 @@ class KLDivergenceDetector(BaseDetector):
                 data_flat = data.flatten()
             else:
                 data_flat = data
-            self._ref_hist_edges = np.percentile(
-                data_flat, np.linspace(0, 100, self.n_bins + 1)
-            )
+            self._ref_hist_edges = np.percentile(data_flat, np.linspace(0, 100, self.n_bins + 1))
             self._ref_hist_edges = np.unique(self._ref_hist_edges)
             ref_counts, _ = np.histogram(data_flat, bins=self._ref_hist_edges)
-            self._reference_pmf = smooth_distribution(
-                ref_counts.astype(float), eps=self.smoothing
-            )
+            self._reference_pmf = smooth_distribution(ref_counts.astype(float), eps=self.smoothing)
             self._ref_categories = None
 
         self._reference_data = data
         self._fitted = True
-        self._logger.info(
-            f"Fitted KL detector with {len(self._reference_pmf)} categories/bins"
-        )
+        self._logger.info(f"Fitted KL detector with {len(self._reference_pmf)} categories/bins")
         return self
 
     def _compute_score(self, reference: np.ndarray, batch: np.ndarray) -> float:
@@ -110,9 +102,11 @@ class KLDivergenceDetector(BaseDetector):
 
     def summary(self):
         base = super().summary()
-        base.update({
-            "smoothing": self.smoothing,
-            "is_categorical": self.is_categorical,
-            "n_categories": len(self._reference_pmf) if self._reference_pmf is not None else 0,
-        })
+        base.update(
+            {
+                "smoothing": self.smoothing,
+                "is_categorical": self.is_categorical,
+                "n_categories": len(self._reference_pmf) if self._reference_pmf is not None else 0,
+            }
+        )
         return base

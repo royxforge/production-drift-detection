@@ -116,10 +116,14 @@ class MMDDetector(BaseDetector):
 
     def summary(self):
         base = super().summary()
-        base.update({
-            "bandwidth": self._bandwidth_,
-            "bandwidth_explicit": self.bandwidth,
-            "subsample": self.subsample,
-            "reference_size": len(self._reference_data) if self._reference_data is not None else 0,
-        })
+        base.update(
+            {
+                "bandwidth": self._bandwidth_,
+                "bandwidth_explicit": self.bandwidth,
+                "subsample": self.subsample,
+                "reference_size": (
+                    len(self._reference_data) if self._reference_data is not None else 0
+                ),
+            }
+        )
         return base

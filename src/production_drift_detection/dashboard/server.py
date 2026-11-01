@@ -7,15 +7,14 @@ Launch with:
     python -m production_drift_detection.dashboard.server
 """
 
+import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-import os
 
 import numpy as np
-import pandas as pd
 from fastapi import FastAPI, Query
-from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from production_drift_detection import __version__
 from production_drift_detection.alerts.schemas import Severity
@@ -58,7 +57,8 @@ _n_batches = 25
 
 def _initialize() -> None:
     """Generate sample data and fit monitors (lazy init on first request)."""
-    global _stream_monitor, _confidence_monitor, _correlation, _generator, _results_log
+    # ``_results_log`` is mutated in place, so it does not need ``global``.
+    global _stream_monitor, _confidence_monitor, _correlation, _generator
 
     if _stream_monitor is not None:
         return
@@ -95,7 +95,9 @@ def _initialize() -> None:
                 batch[:, col] = rng.normal(mean, std, batch_size)
         else:
             drift_magnitude += 0.15
-            batch = _generator.covariate_shift(n_samples=batch_size, shift_magnitude=drift_magnitude)
+            batch = _generator.covariate_shift(
+                n_samples=batch_size, shift_magnitude=drift_magnitude
+            )
 
         result = _stream_monitor.process_batch(batch)
 
@@ -122,6 +124,7 @@ def _initialize() -> None:
 # API routes
 # ---------------------------------------------------------------------------
 
+
 @app.on_event("startup")
 async def startup() -> None:
     _initialize()
@@ -141,8 +144,14 @@ def get_overview() -> Dict[str, Any]:
         "alerts_by_severity": summary.get("alerts_by_severity", {}),
         "early_warning_score": cr.compute_early_warning_score().get("early_warning_score", 0),
         "confidence_drop": (
-            (cm._confidence_history[0] - cm._confidence_history[-1]) / max(cm._confidence_history[0], 1e-10) * 100
-        ) if len(cm._confidence_history) > 1 else 0,
+            (
+                (cm._confidence_history[0] - cm._confidence_history[-1])
+                / max(cm._confidence_history[0], 1e-10)
+                * 100
+            )
+            if len(cm._confidence_history) > 1
+            else 0
+        ),
     }
 
 
@@ -251,6 +260,7 @@ if STATIC_DIR.exists():
 def serve(host: str = "127.0.0.1", port: int = 8501) -> None:
     """Launch the dashboard server."""
     import uvicorn
+
     print(f"ProductionDriftDetection dashboard running at http://{host}:{port}")
     print("Press Ctrl+C to stop.")
     uvicorn.run(app, host=host, port=port, log_level="info")
